@@ -1,0 +1,9 @@
+{
+  "name": "batch-edit",
+  "description": "Create and edit many files in one all-or-nothing call",
+  "version": "0.1.0",
+  "author": {
+    "name": "andrew-from-toronto"
+  },
+  "repository": "https://github.com/andrew-from-toronto/claude-two-four"
+}

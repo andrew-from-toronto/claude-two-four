@@ -1,0 +1,14 @@
+{
+  "name": "claude-two-four",
+  "description": "Personal Claude Code tools",
+  "owner": {
+    "name": "andrew-from-toronto"
+  },
+  "plugins": [
+    {
+      "name": "batch-edit",
+      "source": "./plugins/batch-edit",
+      "description": "Create and edit many files in one all-or-nothing call"
+    }
+  ]
+}
