@@ -1,7 +1,7 @@
 {
   "name": "shell",
   "description": "Run commands with full output saved to a file and a filtered digest returned; read GitHub Actions results",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "andrew-from-toronto"
   },

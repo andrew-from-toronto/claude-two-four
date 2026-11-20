@@ -24504,7 +24504,7 @@ var searchSpec = object({
 });
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var handle = serveStdio(() => {
-  const server = new McpServer({ name: "batch-edit", version: "0.2.0" });
+  const server = new McpServer({ name: "batch-edit", version: "0.2.1" });
   server.registerTool(
     "edit",
     {

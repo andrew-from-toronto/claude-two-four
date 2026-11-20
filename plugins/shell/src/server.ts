@@ -46,7 +46,7 @@ const ciSpec = z.object({
 const baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
 const handle = serveStdio(() => {
-  const server = new McpServer({ name: 'shell', version: '0.1.0' });
+  const server = new McpServer({ name: 'shell', version: '0.1.1' });
   server.registerTool('run', { description: RUN_DESCRIPTION, inputSchema: runSpec }, async (spec) => {
     const result = await runCommand(spec, baseDir);
     return { content: [{ type: 'text', text: result.text }], isError: !result.ok };

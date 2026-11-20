@@ -41,7 +41,7 @@ const searchSpec = z.object({
 const baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
 const handle = serveStdio(() => {
-  const server = new McpServer({ name: 'batch-edit', version: '0.2.0' });
+  const server = new McpServer({ name: 'batch-edit', version: '0.2.1' });
   server.registerTool(
     'edit',
     {
