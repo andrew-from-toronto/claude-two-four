@@ -27,12 +27,20 @@ const CI_DESCRIPTION = `Read GitHub Actions results through the gh CLI, returnin
 
 target can be: a run URL or job URL; a run id (6+ digits); a PR as "#123", "pr:123", a bare small number or a PR URL; a commit SHA (short SHAs are expanded); or a branch name. For a PR, commit or branch it shows the newest run of each workflow.
 
-For each run: status, job counts, failed jobs with their failed steps, and per failed step the ##[error] lines plus its last log_lines lines (up to 5 jobs, fetched in parallel). Returns immediately; poll again for in-progress runs.`;
+For each run: status, job counts, failed jobs with their failed steps, and per failed step the ##[error] lines plus its last log_lines lines (up to 5 jobs, fetched in parallel). Returns immediately; poll again for in-progress runs.
+
+- grep: search the job logs instead (regex, timestamps stripped; a leading (?i) is accepted), with context lines; up to 20 jobs.
+- jobs: regex on job name to choose which jobs' logs to read, passed or failed (default: failed jobs).
+- Each completed job's full log is cached and its path returned ("log: ..."); grep line numbers are that file's, so it can be read or searched directly.`;
 
 const ciSpec = z.object({
   target: z.string().min(1).describe('Run/job/PR URL, run id, #PR, commit SHA or branch'),
   repo: z.string().optional().describe('owner/name; default the repo gh infers from the project directory or the URL'),
   log_lines: z.number().int().min(0).max(300).optional().describe('Last lines per failed step (default 30)'),
+  grep: z.string().optional().describe('Regex to search the job logs for instead of the failed-step summary'),
+  context: z.number().int().min(0).max(20).optional().describe('grep: lines of context around each match (default 0)'),
+  max_matches: z.number().int().min(1).max(1000).optional().describe('grep: matches shown per job (default 50)'),
+  jobs: z.string().optional().describe('Regex on job name selecting which jobs to read (default: failed jobs)'),
 });
 
 const baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();

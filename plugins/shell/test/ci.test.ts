@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { condenseLog, parseTarget } from '../src/ci.js';
+import { condenseLog, grepLog, parseTarget } from '../src/ci.js';
 
 describe('parseTarget', () => {
   it.each([
@@ -44,6 +44,16 @@ describe('condenseLog', () => {
       '        continuation without timestamp',
       '        Build FAILED.',
       '        ##[error]Program.cs(21,39): error CS1061: nope',
+    ]);
+  });
+
+  it('greps with file line numbers, stripped timestamps, context and a cap', () => {
+    expect(grepLog(log, /error CS/, 1, 1)).toEqual([
+      '    2 matching lines',
+      '      3- Restore complete',
+      '      4: ##[error]Program.cs(21,39): error CS1061: nope',
+      '      5- continuation without timestamp',
+      '    (1 more; search the log file)',
     ]);
   });
 

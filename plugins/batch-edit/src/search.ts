@@ -88,7 +88,8 @@ export async function resolveFiles(paths: string[], baseDir: string): Promise<{ 
     // A real path wins over glob syntax, e.g. a Next.js app/[id] folder.
     if (!st && GLOB_CHARS.test(p)) {
       const { root, glob } = splitGlob(p, baseDir);
-      const isMatch = picomatch(glob, { dot: true, nocase: NOCASE });
+      // `${glob}/**` lets a glob that names folders, like plugins/*/src, match the files inside them.
+      const isMatch = picomatch([glob, `${glob}/**`], { dot: true, nocase: NOCASE });
       const found = (await listFiles(root)).filter((f) => isMatch(toSlash(f)));
       if (!found.length) missing.push(p);
       for (const f of found) files.add(f);

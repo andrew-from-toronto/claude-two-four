@@ -298,10 +298,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path2) {
-  if (!path2)
+function getElementAtPath(obj, path3) {
+  if (!path3)
     return obj;
-  return path2.reduce((acc, key) => acc?.[key], obj);
+  return path3.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -641,11 +641,11 @@ function explicitlyAborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path2, issues) {
+function prefixIssues(path3, issues) {
   return issues.map((iss) => {
     var _a3;
     (_a3 = iss).path ?? (_a3.path = []);
-    iss.path.unshift(path2);
+    iss.path.unshift(path3);
     return iss;
   });
 }
@@ -1106,16 +1106,16 @@ function flattenError(error2, mapper = (issue2) => issue2.message) {
 }
 function formatError(error2, mapper = (issue2) => issue2.message) {
   const fieldErrors = { _errors: [] };
-  const processError = (error3, path2 = []) => {
+  const processError = (error3, path3 = []) => {
     for (const issue2 of error3.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path2, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path3, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path2, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path2, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
       } else {
-        const fullpath = [...path2, ...issue2.path];
+        const fullpath = [...path3, ...issue2.path];
         if (fullpath.length === 0) {
           fieldErrors._errors.push(mapper(issue2));
         } else {
@@ -10479,9 +10479,9 @@ var rev2026Codec = {
     });
     const parsed = buildSchemas2026().RequestMetaEnvelopeSchema.safeParse(meta2);
     if (!parsed.success) for (const issue2 of parsed.error.issues) {
-      const path2 = issue2.path.map(String);
-      const key = path2.length > 0 ? path2.join(".") : "_meta";
-      if (path2.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
+      const path3 = issue2.path.map(String);
+      const key = path3.length > 0 ? path3.join(".") : "_meta";
+      if (path3.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
       issues.push({
         key,
         problem: issue2.message
@@ -10808,17 +10808,17 @@ function scanXMcpHeaderDeclarations(inputSchema) {
   const declarations = [];
   const seenLower = /* @__PURE__ */ new Map();
   let numberFault;
-  const visit = (node2, path2, reachable) => {
+  const visit = (node2, path3, reachable) => {
     if (node2 === null || typeof node2 !== "object") return void 0;
     const schema = node2;
     if (X_MCP_HEADER_KEY in schema) {
-      if (!reachable || path2.length === 0) return `${pathName(path2)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
+      if (!reachable || path3.length === 0) return `${pathName(path3)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
       const raw = schema[X_MCP_HEADER_KEY];
-      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path2)}: x-mcp-header MUST be a non-empty string`;
-      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path2)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
+      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path3)}: x-mcp-header MUST be a non-empty string`;
+      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path3)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
       const type = typeof schema.type === "string" ? schema.type : void 0;
       if (type === void 0 || !PERMITTED_X_MCP_HEADER_TYPES.has(type)) {
-        const fault$1 = `${pathName(path2)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
+        const fault$1 = `${pathName(path3)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
         if (type !== "number") return fault$1;
         numberFault ??= fault$1;
       }
@@ -10827,14 +10827,14 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (prior !== void 0) return `x-mcp-header '${raw}' is not case-insensitively unique (also declared as '${prior}')`;
       seenLower.set(lower, raw);
       declarations.push({
-        path: path2,
+        path: path3,
         headerName: raw,
         type
       });
     }
     const properties = schema.properties;
     if (properties !== null && typeof properties === "object") for (const [key, child] of Object.entries(properties)) {
-      const fault$1 = visit(child, [...path2, key], reachable);
+      const fault$1 = visit(child, [...path3, key], reachable);
       if (fault$1 !== void 0) return fault$1;
     }
     for (const k of NON_REACHABLE_SUBSCHEMA_KEYWORDS) {
@@ -10842,7 +10842,7 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (sub === void 0) continue;
       const branches = Array.isArray(sub) ? sub : sub !== null && typeof sub === "object" && OBJECT_VALUED_SUBSCHEMA_KEYWORDS.has(k) ? Object.values(sub) : [sub];
       for (const branch of branches) {
-        const fault$1 = visit(branch, [...path2, `<${k}>`], false);
+        const fault$1 = visit(branch, [...path3, `<${k}>`], false);
         if (fault$1 !== void 0) return fault$1;
       }
     }
@@ -10887,8 +10887,8 @@ var OBJECT_VALUED_SUBSCHEMA_KEYWORDS = /* @__PURE__ */ new Set([
   "$defs",
   "definitions"
 ]);
-function pathName(path2) {
-  return path2.length === 0 ? "<root>" : path2.join(".");
+function pathName(path3) {
+  return path3.length === 0 ? "<root>" : path3.join(".");
 }
 var HEADER_MISMATCH_ERROR_CODE = -32020;
 var INBOUND_VALIDATION_LADDER = [
@@ -11180,7 +11180,7 @@ var PROPERTY_KEYS_BY_TYPE = {
   array: shapeKeys([UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema])
 };
 var SUPPORTED_STRING_FORMATS = new Set(StringSchemaSchema.shape.format.unwrap().options);
-function walkProperty(node2, path2, vendor, unsupported) {
+function walkProperty(node2, path3, vendor, unsupported) {
   if (!isJsonObject(node2)) return node2;
   const allowedKeys = typeof node2.type === "string" && Object.hasOwn(PROPERTY_KEYS_BY_TYPE, node2.type) ? PROPERTY_KEYS_BY_TYPE[node2.type] : void 0;
   if (allowedKeys === void 0) return node2;
@@ -11188,8 +11188,8 @@ function walkProperty(node2, path2, vendor, unsupported) {
   for (const [key, value] of Object.entries(node2)) if (allowedKeys.has(key) || isAnnotationOnlyJsonSchemaKeyword(key)) pruned[key] = value;
   else if (key === "pattern" && node2.type === "string" && typeof node2.format === "string") {
     if (!SUPPORTED_STRING_FORMATS.has(node2.format)) pruned[key] = value;
-    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path2}.${key}`);
-  } else unsupported.push(`${path2}.${key}`);
+    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path3}.${key}`);
+  } else unsupported.push(`${path3}.${key}`);
   return pruned;
 }
 function walkRequestedSchema(converted, vendor) {
@@ -11206,11 +11206,11 @@ function describeUnsupportedProperties(pruned, fallback) {
   const offenders = Object.entries(pruned.properties).filter(([, node2]) => !parseSchema(PrimitiveSchemaDefinitionSchema, node2).success).map(([name]) => `properties.${name}`);
   return offenders.length > 0 ? offenders.join(", ") : fallback;
 }
-function findDroppedConstraintPaths(original, parsed, path2 = "") {
-  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path2}[${index}]`));
+function findDroppedConstraintPaths(original, parsed, path3 = "") {
+  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path3}[${index}]`));
   if (!isJsonObject(original) || !isJsonObject(parsed)) return [];
   return Object.entries(original).flatMap(([key, value]) => {
-    const childPath = path2 ? `${path2}.${key}` : key;
+    const childPath = path3 ? `${path3}.${key}` : key;
     if (!Object.prototype.hasOwnProperty.call(parsed, key)) return isAnnotationOnlyJsonSchemaKeyword(key) ? [] : [childPath];
     return findDroppedConstraintPaths(value, parsed[key], childPath);
   });
@@ -15351,8 +15351,8 @@ var require_utils = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     for (let i = 0; i < str.length; i++) if (str[i] === token) ind++;
     return ind;
   }
-  function removeDotSegments(path2) {
-    let input = path2;
+  function removeDotSegments(path3) {
+    let input = path3;
     const output = [];
     let nextSlash = -1;
     let len = 0;
@@ -15690,8 +15690,8 @@ var require_schemes = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     }
     if (wsComponent.resourceName) {
       const queryIndex = wsComponent.resourceName.indexOf("?");
-      const path2 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
-      wsComponent.path = path2 && path2 !== "/" ? path2 : void 0;
+      const path3 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
+      wsComponent.path = path3 && path3 !== "/" ? path3 : void 0;
       wsComponent.query = queryIndex === -1 ? void 0 : wsComponent.resourceName.slice(queryIndex + 1);
       wsComponent.resourceName = void 0;
     }
@@ -19794,11 +19794,11 @@ var require_dist = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     if (!f) throw new Error(`Unknown format "${name}"`);
     return f;
   };
-  function addFormats2(ajv, list, fs2, exportName) {
+  function addFormats2(ajv, list, fs3, exportName) {
     var _a3;
     var _b;
     (_a3 = (_b = ajv.opts.code).formats) !== null && _a3 !== void 0 || (_b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`);
-    for (const f of list) ajv.addFormat(f, fs2[f]);
+    for (const f of list) ajv.addFormat(f, fs3[f]);
   }
   module.exports = exports = formatsPlugin;
   Object.defineProperty(exports, "__esModule", { value: true });
@@ -22234,6 +22234,9 @@ function toError(value) {
 
 // src/ci.ts
 import { execFile } from "node:child_process";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { promisify } from "node:util";
 
 // src/text.ts
@@ -22250,6 +22253,8 @@ function compilePattern(source) {
 
 // src/ci.ts
 var execFileP = promisify(execFile);
+var CI_DIR = path.join(os.tmpdir(), "claude-two-four", "ci");
+var MAX_GREP_JOBS = 20;
 var FAILED = /* @__PURE__ */ new Set(["failure", "timed_out", "startup_failure"]);
 var MAX_LOG_JOBS = 5;
 function parseTarget(raw) {
@@ -22290,6 +22295,28 @@ function condenseLog(text, steps, tail) {
   }
   return out;
 }
+function grepLog(text, re, ctx, max) {
+  const lines = text.split(/\r?\n/).map((l) => clean(l.replace(TIMESTAMP, "")));
+  const hits = [];
+  let total = 0;
+  for (let n = 0; n < lines.length; n++) {
+    if (!re.test(lines[n])) continue;
+    total++;
+    if (hits.length < max) hits.push(n);
+  }
+  const out = [`    ${total} matching lines`];
+  const hitSet = new Set(hits);
+  let last = -1;
+  for (const h of hits) {
+    const from = Math.max(0, h - ctx, last + 1);
+    const to = Math.min(lines.length - 1, h + ctx);
+    if (last >= 0 && from > last + 1) out.push("      --");
+    for (let n = from; n <= to; n++) out.push(`      ${n + 1}${hitSet.has(n) ? ":" : "-"} ${lines[n]}`);
+    last = Math.max(last, to);
+  }
+  if (total > hits.length) out.push(`    (${total - hits.length} more; search the log file)`);
+  return out;
+}
 async function gh(args, cwd) {
   try {
     const { stdout } = await execFileP("gh", args, { cwd, maxBuffer: 256 * 1024 * 1024, windowsHide: true });
@@ -22322,7 +22349,58 @@ async function latestRuns(filter, repoArgs, cwd) {
   return [...newest.values()].map((r) => String(r.databaseId));
 }
 var label = (status, conclusion) => status !== "completed" ? status.toUpperCase() : conclusion === "success" ? "PASS" : conclusion === "failure" ? "FAIL" : conclusion.toUpperCase();
+async function fetchRun(id, repo, cwd) {
+  const base = `repos/${repo ?? "{owner}/{repo}"}/actions/runs/${id}`;
+  const [runJson, jobLines] = await Promise.all([
+    gh(["api", base], cwd),
+    gh(["api", "--paginate", `${base}/jobs?per_page=100`, "--jq", ".jobs[]"], cwd)
+  ]);
+  const run = JSON.parse(runJson);
+  const jobs = jobLines.split("\n").filter(Boolean).map((l) => JSON.parse(l)).map((j) => ({
+    databaseId: j.id,
+    name: j.name,
+    status: j.status,
+    conclusion: j.conclusion ?? "",
+    steps: (j.steps ?? []).map((s) => ({
+      name: s.name,
+      conclusion: s.conclusion ?? "",
+      ...s.started_at ? { startedAt: s.started_at } : {},
+      ...s.completed_at ? { completedAt: s.completed_at } : {}
+    }))
+  }));
+  return {
+    databaseId: run.id,
+    workflowName: run.name,
+    displayTitle: run.display_title,
+    event: run.event,
+    status: run.status,
+    conclusion: run.conclusion ?? "",
+    url: run.html_url,
+    headSha: run.head_sha,
+    headBranch: run.head_branch,
+    jobs
+  };
+}
+async function jobLog(job, repo, cwd) {
+  const file = path.join(CI_DIR, `${job.databaseId}.log`);
+  const cached2 = await fs.readFile(file, "utf8").catch(() => null);
+  if (cached2 !== null) return { text: cached2, file };
+  const text = await gh(["api", `repos/${repo ?? "{owner}/{repo}"}/actions/jobs/${job.databaseId}/logs`], cwd);
+  await fs.mkdir(CI_DIR, { recursive: true });
+  const temp = `${file}.${process.pid}.tmp`;
+  await fs.writeFile(temp, text);
+  await fs.rename(temp, file);
+  return { text, file };
+}
 async function readCi(spec, cwd) {
+  let grep;
+  let nameFilter;
+  try {
+    grep = spec.grep ? compilePattern(spec.grep) : void 0;
+    nameFilter = spec.jobs ? compilePattern(spec.jobs) : void 0;
+  } catch (e) {
+    return { ok: false, text: `Invalid pattern: ${e.message}` };
+  }
   const target = parseTarget(spec.target);
   const repo = spec.repo ?? ("repo" in target ? target.repo : void 0);
   const repoArgs = repo ? ["-R", repo] : [];
@@ -22340,19 +22418,19 @@ async function readCi(spec, cwd) {
       out.push(`${target.kind === "pr" ? `PR #${target.number} head` : "commit"} ${sha}`);
     }
     if (!ids.length) return { ok: true, text: [...out, "No workflow runs found."].join("\n") };
-    const fields = "databaseId,workflowName,displayTitle,event,status,conclusion,url,headSha,headBranch,jobs";
-    const runs = await Promise.all(ids.map(async (id) => JSON.parse(await gh(["run", "view", id, ...repoArgs, "--json", fields], cwd))));
+    const runs = await Promise.all(ids.map((id) => fetchRun(id, repo, cwd)));
+    const pick2 = (run) => target.kind === "run" && target.job ? run.jobs.filter((j) => String(j.databaseId) === target.job) : run.jobs.filter((j) => nameFilter ? nameFilter.test(j.name) : FAILED.has(j.conclusion));
+    const limit = grep ? MAX_GREP_JOBS : MAX_LOG_JOBS;
     const logJobs = [];
-    for (const run of runs) {
-      const jobs = target.kind === "run" && target.job ? run.jobs.filter((j) => String(j.databaseId) === target.job) : run.jobs.filter((j) => FAILED.has(j.conclusion));
-      for (const job of jobs) if (job.status === "completed" && logJobs.length < MAX_LOG_JOBS) logJobs.push({ run, job });
-    }
+    const hasLog = (job) => job.status === "completed" && job.conclusion !== "skipped";
+    for (const run of runs) for (const job of pick2(run)) if (hasLog(job) && logJobs.length < limit) logJobs.push(job);
     const logs = new Map(
       await Promise.all(
-        logJobs.map(async ({ job }) => {
+        logJobs.map(async (job) => {
           try {
-            const log = await gh(["api", `repos/${repo ?? "{owner}/{repo}"}/actions/jobs/${job.databaseId}/logs`], cwd);
-            return [job.databaseId, condenseLog(log, job.steps ?? [], tail)];
+            const { text, file } = await jobLog(job, repo, cwd);
+            const body = grep ? grepLog(text, grep, spec.context ?? 0, spec.max_matches ?? 50) : condenseLog(text, job.steps ?? [], tail);
+            return [job.databaseId, [`    log: ${file}`, ...body]];
           } catch (e) {
             return [job.databaseId, [`    log unavailable: ${e.message}`]];
           }
@@ -22364,14 +22442,14 @@ async function readCi(spec, cwd) {
       const counts = /* @__PURE__ */ new Map();
       for (const j of run.jobs) counts.set(j.conclusion || j.status, (counts.get(j.conclusion || j.status) ?? 0) + 1);
       out.push(run.jobs.length ? `  ${run.jobs.length} jobs: ${[...counts].map(([k, n]) => `${n} ${k}`).join(", ")}` : "  no jobs ran");
-      const jobs = target.kind === "run" && target.job ? run.jobs.filter((j) => String(j.databaseId) === target.job) : run.jobs;
-      for (const job of jobs) {
-        if (!FAILED.has(job.conclusion) && !(target.kind === "run" && target.job)) continue;
+      for (const job of pick2(run)) {
         const failedSteps = (job.steps ?? []).filter((s) => FAILED.has(s.conclusion)).map((s) => s.name);
         out.push(`  ${label(job.status, job.conclusion)} job ${job.name} (${job.databaseId})${failedSteps.length ? `, failed step: ${failedSteps.join(", ")}` : ""}`);
         const log = logs.get(job.databaseId);
         if (log) out.push(...log);
-        else if (job.status === "completed") out.push(`    (log not fetched: only the first ${MAX_LOG_JOBS} failed jobs are)`);
+        else if (job.conclusion === "skipped") out.push("    (skipped; no log)");
+        else if (job.status === "completed") out.push(`    (log not fetched: limit ${limit} jobs per call; narrow with jobs or a job URL)`);
+        else out.push("    (in progress; log available when the job completes)");
       }
     }
     return { ok: true, text: out.join("\n").trimStart() };
@@ -22383,9 +22461,9 @@ async function readCi(spec, cwd) {
 // src/run.ts
 import { execFile as execFile2, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { closeSync, createReadStream, openSync, promises as fs } from "node:fs";
-import os from "node:os";
-import path from "node:path";
+import { closeSync, createReadStream, openSync, promises as fs2 } from "node:fs";
+import os2 from "node:os";
+import path2 from "node:path";
 import readline from "node:readline";
 import { promisify as promisify2 } from "node:util";
 
@@ -22488,7 +22566,7 @@ var OutputDigest = class {
 
 // src/run.ts
 var execFileP2 = promisify2(execFile2);
-var OUTPUT_DIR = path.join(os.tmpdir(), "claude-two-four", "run");
+var OUTPUT_DIR = path2.join(os2.tmpdir(), "claude-two-four", "run");
 var pwshScript = (command) => `${command}
 $__ok = $?
 if ($__ok) { exit 0 }
@@ -22498,13 +22576,13 @@ exit 1
 async function bashPath() {
   if (process.platform !== "win32") return "/bin/bash";
   if (process.env.CLAUDE_CODE_GIT_BASH_PATH) return process.env.CLAUDE_CODE_GIT_BASH_PATH;
-  const candidates = [path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Git", "bin", "bash.exe")];
+  const candidates = [path2.join(process.env.ProgramFiles ?? "C:\\Program Files", "Git", "bin", "bash.exe")];
   try {
     const { stdout } = await execFileP2("where", ["git"], { windowsHide: true });
-    for (const git of stdout.split(/\r?\n/).filter(Boolean)) candidates.unshift(path.resolve(path.dirname(git), "..", "bin", "bash.exe"));
+    for (const git of stdout.split(/\r?\n/).filter(Boolean)) candidates.unshift(path2.resolve(path2.dirname(git), "..", "bin", "bash.exe"));
   } catch {
   }
-  for (const c of candidates) if (await fs.stat(c).then(() => true, () => false)) return c;
+  for (const c of candidates) if (await fs2.stat(c).then(() => true, () => false)) return c;
   throw new Error("Git Bash not found; set CLAUDE_CODE_GIT_BASH_PATH");
 }
 function killTree(pid) {
@@ -22526,22 +22604,22 @@ async function runCommand(spec, baseDir2) {
     return { ok: false, text: `Invalid match pattern: ${e.message}` };
   }
   const shell = spec.shell ?? (process.platform === "win32" ? "pwsh" : "bash");
-  const cwd = path.resolve(baseDir2, spec.cwd ?? ".");
-  if (!await fs.stat(cwd).then((s) => s.isDirectory(), () => false)) return { ok: false, text: `cwd not found: ${cwd}` };
-  await fs.mkdir(OUTPUT_DIR, { recursive: true });
+  const cwd = path2.resolve(baseDir2, spec.cwd ?? ".");
+  if (!await fs2.stat(cwd).then((s) => s.isDirectory(), () => false)) return { ok: false, text: `cwd not found: ${cwd}` };
+  await fs2.mkdir(OUTPUT_DIR, { recursive: true });
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").replace(/\..*$/, "").replace("T", "-");
   const slug = spec.command.trim().split(/\s+/).slice(0, 3).join("-").replace(/[^\w.-]+/g, "").slice(0, 40) || "cmd";
-  const base = path.join(OUTPUT_DIR, `${stamp}-${randomBytes(2).toString("hex")}-${slug}`);
+  const base = path2.join(OUTPUT_DIR, `${stamp}-${randomBytes(2).toString("hex")}-${slug}`);
   const logPath = `${base}.log`;
   const scriptPath = `${base}.${shell === "pwsh" ? "ps1" : "sh"}`;
-  await fs.writeFile(scriptPath, shell === "pwsh" ? pwshScript(spec.command) : `${spec.command}
+  await fs2.writeFile(scriptPath, shell === "pwsh" ? pwshScript(spec.command) : `${spec.command}
 `);
   let exe;
   let args;
   try {
     [exe, args] = shell === "pwsh" ? ["pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath]] : [await bashPath(), [scriptPath.replace(/\\/g, "/")]];
   } catch (e) {
-    await fs.rm(scriptPath, { force: true });
+    await fs2.rm(scriptPath, { force: true });
     return { ok: false, text: e.message };
   }
   const started = Date.now();
@@ -22564,9 +22642,9 @@ async function runCommand(spec, baseDir2) {
       resolve({ code: c });
     });
   });
-  await fs.rm(scriptPath, { force: true });
+  await fs2.rm(scriptPath, { force: true });
   if (error2) {
-    await fs.rm(logPath, { force: true });
+    await fs2.rm(logPath, { force: true });
     return { ok: false, text: `Could not start ${exe}: ${error2.message}` };
   }
   const digest = new OutputDigest({ tail: spec.tail ?? 30, match, contextAfter: spec.context_after, dotnetTest: spec.preset === "dotnet-test" });
@@ -22599,11 +22677,19 @@ var CI_DESCRIPTION = `Read GitHub Actions results through the gh CLI, returning 
 
 target can be: a run URL or job URL; a run id (6+ digits); a PR as "#123", "pr:123", a bare small number or a PR URL; a commit SHA (short SHAs are expanded); or a branch name. For a PR, commit or branch it shows the newest run of each workflow.
 
-For each run: status, job counts, failed jobs with their failed steps, and per failed step the ##[error] lines plus its last log_lines lines (up to 5 jobs, fetched in parallel). Returns immediately; poll again for in-progress runs.`;
+For each run: status, job counts, failed jobs with their failed steps, and per failed step the ##[error] lines plus its last log_lines lines (up to 5 jobs, fetched in parallel). Returns immediately; poll again for in-progress runs.
+
+- grep: search the job logs instead (regex, timestamps stripped; a leading (?i) is accepted), with context lines; up to 20 jobs.
+- jobs: regex on job name to choose which jobs' logs to read, passed or failed (default: failed jobs).
+- Each completed job's full log is cached and its path returned ("log: ..."); grep line numbers are that file's, so it can be read or searched directly.`;
 var ciSpec = object({
   target: string2().min(1).describe("Run/job/PR URL, run id, #PR, commit SHA or branch"),
   repo: string2().optional().describe("owner/name; default the repo gh infers from the project directory or the URL"),
-  log_lines: number2().int().min(0).max(300).optional().describe("Last lines per failed step (default 30)")
+  log_lines: number2().int().min(0).max(300).optional().describe("Last lines per failed step (default 30)"),
+  grep: string2().optional().describe("Regex to search the job logs for instead of the failed-step summary"),
+  context: number2().int().min(0).max(20).optional().describe("grep: lines of context around each match (default 0)"),
+  max_matches: number2().int().min(1).max(1e3).optional().describe("grep: matches shown per job (default 50)"),
+  jobs: string2().optional().describe("Regex on job name selecting which jobs to read (default: failed jobs)")
 });
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var handle = serveStdio(() => {

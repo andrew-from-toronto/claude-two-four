@@ -43,6 +43,8 @@ And a `search` tool that runs several regex patterns over many files in one call
 - Takes a run or job URL, run id, PR (`#123` or URL), commit SHA (short ones are expanded) or branch.
 - Shows the newest run per workflow, job counts, and for each failed step its `##[error]` lines and last log lines.
 - Job logs are fetched per job and in parallel, then sliced to the failed step.
+- `grep` searches the job logs instead (with context lines), and `jobs` picks which jobs by name, passing ones included.
+- Completed jobs' logs are cached in the temp folder and their paths returned, so repeat searches skip the download and the files can be searched directly.
 
 ## Develop
 

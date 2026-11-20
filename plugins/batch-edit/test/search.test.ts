@@ -57,6 +57,8 @@ describe('runSearch', () => {
   it('prints context lines and honours include and glob paths', async () => {
     const { text } = await runSearch({ patterns: ['beta'], paths: ['src/**/*.ts'], context: 1 }, dir);
     expect(text).toContain('  1- const alpha = 1;\n  2: const beta = 2;\n  3- const gamma = 3;');
+    const folders = await runSearch({ patterns: ['beta'], paths: ['s*/deep'] }, dir);
+    expect(folders.text).toContain('src/deep/b.ts\n  2: const beta = 2;');
     const inc = await runSearch({ patterns: ['alpha'], include: ['*.cs'], ignore_case: true }, dir);
     expect(inc.text).toContain('1 matches in 1 files');
   });

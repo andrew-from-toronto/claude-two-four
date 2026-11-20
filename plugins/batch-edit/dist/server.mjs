@@ -24344,7 +24344,7 @@ async function resolveFiles(paths, baseDir2) {
     const st = await fs2.stat(abs).catch(() => null);
     if (!st && GLOB_CHARS.test(p)) {
       const { root, glob } = splitGlob(p, baseDir2);
-      const isMatch = (0, import_picomatch.default)(glob, { dot: true, nocase: NOCASE });
+      const isMatch = (0, import_picomatch.default)([glob, `${glob}/**`], { dot: true, nocase: NOCASE });
       const found = (await listFiles(root)).filter((f) => isMatch(toSlash(f)));
       if (!found.length) missing.push(p);
       for (const f of found) files.add(f);
