@@ -21,7 +21,7 @@ export interface EditFailure {
   reason: string;
 }
 
-export type BatchResult = { ok: true; files: FileOutcome[] } | { ok: false; failures: EditFailure[] };
+export type BatchResult = { ok: true; files: FileOutcome[] } | { ok: false; partial?: boolean; failures: EditFailure[] };
 
 interface FileState {
   path: string;
@@ -157,7 +157,12 @@ async function loadFile(real: string): Promise<FileState | string> {
     return errorMessage(e);
   }
   if (!stat.isFile()) return 'not a regular file';
-  const buf = await fs.readFile(real);
+  let buf: Buffer;
+  try {
+    buf = await fs.readFile(real);
+  } catch (e) {
+    return errorMessage(e);
+  }
   if ((buf[0] === 0xff && buf[1] === 0xfe) || (buf[0] === 0xfe && buf[1] === 0xff)) return 'UTF-16 files are not supported';
   if (buf.includes(0)) return 'file looks binary';
   state.bom = buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf;
@@ -195,55 +200,66 @@ function applyEdit(state: FileState, spec: EditSpec): string | null {
 }
 
 async function commit(states: FileState[]): Promise<void> {
-  const temps: Array<{ state: FileState; temp: string }> = [];
-  try {
-    for (const state of states) {
+  const temps = states.map((state) => ({ state, temp: `${state.path}.${randomBytes(6).toString('hex')}.tmp` }));
+  const written = await Promise.allSettled(
+    temps.map(async ({ state, temp }) => {
       if (state.created) await fs.mkdir(path.dirname(state.path), { recursive: true });
-      const temp = `${state.path}.${randomBytes(6).toString('hex')}.tmp`;
       await fs.writeFile(temp, (state.bom ? UTF8_BOM : '') + state.text, { encoding: 'utf8', mode: state.mode, flag: 'wx' });
-      temps.push({ state, temp });
-    }
-  } catch (e) {
+    }),
+  );
+  const writeFailure = written.find((r) => r.status === 'rejected');
+  if (writeFailure) {
     await Promise.all(temps.map((t) => fs.rm(t.temp, { force: true })));
-    throw e;
+    throw writeFailure.reason;
   }
-  let renamed = 0;
-  try {
-    for (const { state, temp } of temps) {
-      await fs.rename(temp, state.path);
-      renamed++;
-    }
-  } catch (e) {
-    for (const { state } of temps.slice(0, renamed)) {
-      await (state.original === null ? fs.rm(state.path, { force: true }) : fs.writeFile(state.path, state.original));
-    }
-    await Promise.all(temps.slice(renamed).map((t) => fs.rm(t.temp, { force: true })));
-    throw e;
+  const renamed = await Promise.allSettled(temps.map(({ state, temp }) => fs.rename(temp, state.path)));
+  const renameFailure = renamed.find((r) => r.status === 'rejected');
+  if (renameFailure) {
+    const restored = await Promise.allSettled(
+      temps.map(({ state, temp }, i) =>
+        renamed[i]!.status === 'rejected'
+          ? fs.rm(temp, { force: true })
+          : state.original === null
+            ? fs.rm(state.path, { force: true })
+            : fs.writeFile(state.path, state.original),
+      ),
+    );
+    const stuck = temps.filter((_, i) => renamed[i]!.status === 'fulfilled' && restored[i]!.status === 'rejected');
+    throw new CommitError(errorMessage(renameFailure.reason), stuck.map((t) => t.state.path));
+  }
+}
+
+class CommitError extends Error {
+  readonly unrestored: string[];
+  constructor(message: string, unrestored: string[]) {
+    super(message);
+    this.unrestored = unrestored;
   }
 }
 
 /** Applies every edit in order, writing nothing unless all of them succeed. */
 export async function runBatch(edits: EditSpec[], baseDir: string): Promise<BatchResult> {
+  const targets = await Promise.allSettled(edits.map((spec) => resolveTarget(spec.file_path, baseDir)));
+  const reals = [...new Set(targets.flatMap((t) => (t.status === 'fulfilled' ? [t.value] : [])))];
+  const loaded = new Map(await Promise.all(reals.map(async (real) => [real, await loadFile(real)] as const)));
   const states = new Map<string, FileState>();
   const failures: EditFailure[] = [];
   for (const [index, spec] of edits.entries()) {
     const fail = (reason: string) => failures.push({ index, path: spec.file_path, reason });
-    let real: string;
-    try {
-      real = await resolveTarget(spec.file_path, baseDir);
-    } catch (e) {
-      fail(errorMessage(e));
+    const target = targets[index]!;
+    if (target.status === 'rejected') {
+      fail(errorMessage(target.reason));
       continue;
     }
-    let state = states.get(real);
+    let state = states.get(target.value);
     if (!state) {
-      const loaded = await loadFile(real);
-      if (typeof loaded === 'string') {
-        fail(loaded);
+      const file = loaded.get(target.value)!;
+      if (typeof file === 'string') {
+        fail(file);
         continue;
       }
-      state = loaded;
-      states.set(real, state);
+      state = file;
+      states.set(target.value, state);
     }
     const error = applyEdit(state, spec);
     if (error) fail(error);
@@ -253,6 +269,11 @@ export async function runBatch(edits: EditSpec[], baseDir: string): Promise<Batc
   try {
     await commit(changed);
   } catch (e) {
+    const stuck = e instanceof CommitError ? e.unrestored : [];
+    if (stuck.length) {
+      const reason = `write failed: ${errorMessage(e)}; rollback could not restore these, which keep the new content: ${stuck.join(', ')}`;
+      return { ok: false, partial: true, failures: [{ index: -1, path: '', reason }] };
+    }
     return { ok: false, failures: [{ index: -1, path: '', reason: `write failed, all changes rolled back: ${errorMessage(e)}` }] };
   }
   return { ok: true, files: changed.map((s) => ({ path: s.path, created: s.created, edits: s.edits })) };
@@ -271,5 +292,6 @@ export function formatResult(result: BatchResult, total: number): string {
     return `Applied ${plural(total, 'edit')} to ${plural(result.files.length, 'file')}:\n${result.files.map(describeFile).join('\n')}`;
   }
   const lines = result.failures.map((f) => (f.index < 0 ? `  ${f.reason}` : `  #${f.index + 1} ${f.path}: ${f.reason}`));
+  if (result.partial) return `Write failed partway; some files changed:\n${lines.join('\n')}`;
   return `No files changed. ${result.failures.length} of ${plural(total, 'edit')} failed:\n${lines.join('\n')}`;
 }

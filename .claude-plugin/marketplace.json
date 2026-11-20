@@ -8,7 +8,12 @@
     {
       "name": "batch-edit",
       "source": "./plugins/batch-edit",
-      "description": "Create and edit many files in one all-or-nothing call"
+      "description": "Create and edit many files in one all-or-nothing call, and search many files for several patterns in one call"
+    },
+    {
+      "name": "shell",
+      "source": "./plugins/shell",
+      "description": "Run commands with full output saved to a file and a filtered digest returned; read GitHub Actions results"
     }
   ]
 }

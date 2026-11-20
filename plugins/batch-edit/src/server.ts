@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod/v4';
 import { formatResult, runBatch } from './edit.js';
+import { runSearch } from './search.js';
 
 const DESCRIPTION = `Create and edit files, across any number of files, in one call.
 
@@ -19,10 +20,28 @@ const editEntry = z.object({
   replace_all: z.boolean().optional().describe('Replace every match instead of requiring exactly one'),
 });
 
+const SEARCH_DESCRIPTION = `Search many files for several regex patterns in one call.
+
+Every pattern runs against every file; results are grouped by pattern, then file, with line numbers (":" marks a match, "-" a context line). Patterns are JavaScript regex matched line by line; a leading (?i), (?m) or (?s) is accepted as a flag.
+
+- paths: files, directories or globs (e.g. "src/**/*.cs"); default is the project directory. Directories in a git repo honour .gitignore; elsewhere .git, node_modules, bin and obj are skipped.
+- include: filename globs to keep (e.g. "*.ts", "*.{cs,csproj}").
+- Binary files and files over 8 MB are skipped.`;
+
+const searchSpec = z.object({
+  patterns: z.array(z.string().min(1)).min(1).describe('Regex patterns; each is reported separately'),
+  paths: z.array(z.string().min(1)).optional().describe('Files, directories or globs; default the project directory'),
+  include: z.array(z.string().min(1)).optional().describe('Filename globs to keep, e.g. "*.cs"'),
+  ignore_case: z.boolean().optional().describe('Case-insensitive matching for all patterns'),
+  context: z.number().int().min(0).max(20).optional().describe('Lines of context around each match (default 0)'),
+  max_matches: z.number().int().min(1).optional().describe('Matches shown per pattern (default 200)'),
+  files_only: z.boolean().optional().describe('List matching files with counts instead of lines'),
+});
+
 const baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
 const handle = serveStdio(() => {
-  const server = new McpServer({ name: 'batch-edit', version: '0.1.0' });
+  const server = new McpServer({ name: 'batch-edit', version: '0.2.0' });
   server.registerTool(
     'edit',
     {
@@ -34,6 +53,10 @@ const handle = serveStdio(() => {
       return { content: [{ type: 'text', text: formatResult(result, edits.length) }], isError: !result.ok };
     },
   );
+  server.registerTool('search', { description: SEARCH_DESCRIPTION, inputSchema: searchSpec }, async (spec) => {
+    const result = await runSearch(spec, baseDir);
+    return { content: [{ type: 'text', text: result.text }], isError: !result.ok };
+  });
   return server;
 });
 
