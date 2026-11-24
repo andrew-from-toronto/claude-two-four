@@ -10,7 +10,7 @@ The result gives the exit code, duration, line count and the output file's path.
 
 - shell: pwsh (default on Windows) or bash (Git Bash on Windows). The exit code is the last command's, like bash.
 - preset "dotnet-test": failed tests with their messages and first user-code stack frames, compiler errors, and run summaries; works for VSTest and Microsoft.Testing.Platform output.
-- No stdin; interactive prompts will hang until the timeout, which kills the whole process tree.`;
+- No stdin; interactive prompts will hang until the timeout, which kills the whole process tree. Cancelling the call kills it too.`;
 
 const runSpec = z.object({
   command: z.string().min(1).describe('Script to run; may span several lines'),
@@ -46,9 +46,17 @@ const ciSpec = z.object({
 const baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
 const handle = serveStdio(() => {
-  const server = new McpServer({ name: 'shell', version: '0.1.1' });
-  server.registerTool('run', { description: RUN_DESCRIPTION, inputSchema: runSpec }, async (spec) => {
-    const result = await runCommand(spec, baseDir);
+  const server = new McpServer({ name: 'shell', version: '0.1.2' });
+  server.registerTool('run', { description: RUN_DESCRIPTION, inputSchema: runSpec }, async (spec, ctx) => {
+    const progressToken = ctx.mcpReq._meta?.progressToken;
+    const result = await runCommand(spec, baseDir, {
+      signal: ctx.mcpReq.signal,
+      // Keeps Claude Code's idle timeout from aborting quiet long runs, including backgrounded ones.
+      onProgress:
+        progressToken === undefined
+          ? undefined
+          : (progress, message) => void ctx.mcpReq.notify({ method: 'notifications/progress', params: { progressToken, progress, message } }).catch(() => {}),
+    });
     return { content: [{ type: 'text', text: result.text }], isError: !result.ok };
   });
   server.registerTool('ci', { description: CI_DESCRIPTION, inputSchema: ciSpec }, async (spec) => {

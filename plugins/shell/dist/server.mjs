@@ -22596,7 +22596,7 @@ function killTree(pid) {
     }
   }
 }
-async function runCommand(spec, baseDir2) {
+async function runCommand(spec, baseDir2, hooks = {}) {
   let match;
   try {
     match = spec.match ? compilePattern(spec.match) : void 0;
@@ -22625,22 +22625,32 @@ async function runCommand(spec, baseDir2) {
   const started = Date.now();
   const timeoutS = Math.min(spec.timeout_seconds ?? 600, 3600);
   const fd = openSync(logPath, "w");
-  let timedOut = false;
+  let stopped;
   const { code, error: error2 } = await new Promise((resolve) => {
     const child = spawn(exe, args, { cwd, stdio: ["ignore", fd, fd], windowsHide: true, detached: process.platform !== "win32" });
     closeSync(fd);
-    const timer = setTimeout(() => {
-      timedOut = true;
+    const stop = (why) => {
+      stopped ??= why;
       killTree(child.pid);
-    }, timeoutS * 1e3);
-    child.once("error", (err) => {
+    };
+    const timer = setTimeout(() => stop("timeout"), timeoutS * 1e3);
+    const onAbort = () => stop("cancel");
+    const { signal, onProgress } = hooks;
+    signal?.addEventListener("abort", onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+    const ticker = onProgress && setInterval(() => {
+      const elapsed = Math.round((Date.now() - started) / 1e3);
+      fs2.stat(logPath).then((s) => onProgress(elapsed, `running ${elapsed}s, ${Math.round(s.size / 1024)} KB output`), () => {
+      });
+    }, hooks.progressIntervalMs ?? 3e4);
+    const done = (result) => {
       clearTimeout(timer);
-      resolve({ code: null, error: err });
-    });
-    child.once("exit", (c) => {
-      clearTimeout(timer);
-      resolve({ code: c });
-    });
+      clearInterval(ticker);
+      signal?.removeEventListener("abort", onAbort);
+      resolve(result);
+    };
+    child.once("error", (err) => done({ code: null, error: err }));
+    child.once("exit", (c) => done({ code: c }));
   });
   await fs2.rm(scriptPath, { force: true });
   if (error2) {
@@ -22650,9 +22660,9 @@ async function runCommand(spec, baseDir2) {
   const digest = new OutputDigest({ tail: spec.tail ?? 30, match, contextAfter: spec.context_after, dotnetTest: spec.preset === "dotnet-test" });
   for await (const line of readline.createInterface({ input: createReadStream(logPath, "utf8"), crlfDelay: Infinity })) digest.push(line);
   const secs = ((Date.now() - started) / 1e3).toFixed(1);
-  const status = timedOut ? `timed out after ${timeoutS}s, process tree killed` : `exit ${code ?? "killed"}`;
+  const status = stopped === "timeout" ? `timed out after ${timeoutS}s, process tree killed` : stopped === "cancel" ? "cancelled, process tree killed" : `exit ${code ?? "killed"}`;
   const header = `${status} in ${secs}s, ${digest.count} lines. Full output: ${logPath}`;
-  return { ok: !timedOut && code === 0, text: [header, ...digest.render()].join("\n") };
+  return { ok: !stopped && code === 0, text: [header, ...digest.render()].join("\n") };
 }
 
 // src/server.ts
@@ -22662,7 +22672,7 @@ The result gives the exit code, duration, line count and the output file's path.
 
 - shell: pwsh (default on Windows) or bash (Git Bash on Windows). The exit code is the last command's, like bash.
 - preset "dotnet-test": failed tests with their messages and first user-code stack frames, compiler errors, and run summaries; works for VSTest and Microsoft.Testing.Platform output.
-- No stdin; interactive prompts will hang until the timeout, which kills the whole process tree.`;
+- No stdin; interactive prompts will hang until the timeout, which kills the whole process tree. Cancelling the call kills it too.`;
 var runSpec = object({
   command: string2().min(1).describe("Script to run; may span several lines"),
   shell: _enum(["pwsh", "bash"]).optional().describe("Default pwsh on Windows, bash elsewhere"),
@@ -22693,9 +22703,15 @@ var ciSpec = object({
 });
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var handle = serveStdio(() => {
-  const server = new McpServer({ name: "shell", version: "0.1.1" });
-  server.registerTool("run", { description: RUN_DESCRIPTION, inputSchema: runSpec }, async (spec) => {
-    const result = await runCommand(spec, baseDir);
+  const server = new McpServer({ name: "shell", version: "0.1.2" });
+  server.registerTool("run", { description: RUN_DESCRIPTION, inputSchema: runSpec }, async (spec, ctx) => {
+    const progressToken = ctx.mcpReq._meta?.progressToken;
+    const result = await runCommand(spec, baseDir, {
+      signal: ctx.mcpReq.signal,
+      // Keeps Claude Code's idle timeout from aborting quiet long runs, including backgrounded ones.
+      onProgress: progressToken === void 0 ? void 0 : (progress, message) => void ctx.mcpReq.notify({ method: "notifications/progress", params: { progressToken, progress, message } }).catch(() => {
+      })
+    });
     return { content: [{ type: "text", text: result.text }], isError: !result.ok };
   });
   server.registerTool("ci", { description: CI_DESCRIPTION, inputSchema: ciSpec }, async (spec) => {

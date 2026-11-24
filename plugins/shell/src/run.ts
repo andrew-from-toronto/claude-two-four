@@ -23,6 +23,14 @@ export interface RunSpec {
   preset?: 'dotnet-test' | undefined;
 }
 
+export interface RunHooks {
+  /** Aborting kills the process tree. */
+  signal?: AbortSignal | undefined;
+  /** Called every progressIntervalMs while the command runs. */
+  onProgress?: ((elapsedSeconds: number, message: string) => void) | undefined;
+  progressIntervalMs?: number | undefined;
+}
+
 export const OUTPUT_DIR = path.join(os.tmpdir(), 'claude-two-four', 'run');
 
 /** Exits with the last native exit code when the final statement failed, like bash's $?. */
@@ -55,7 +63,7 @@ function killTree(pid: number | undefined): void {
   }
 }
 
-export async function runCommand(spec: RunSpec, baseDir: string): Promise<{ ok: boolean; text: string }> {
+export async function runCommand(spec: RunSpec, baseDir: string, hooks: RunHooks = {}): Promise<{ ok: boolean; text: string }> {
   let match: RegExp | undefined;
   try {
     match = spec.match ? compilePattern(spec.match) : undefined;
@@ -88,22 +96,33 @@ export async function runCommand(spec: RunSpec, baseDir: string): Promise<{ ok: 
   const started = Date.now();
   const timeoutS = Math.min(spec.timeout_seconds ?? 600, 3600);
   const fd = openSync(logPath, 'w');
-  let timedOut = false;
+  let stopped: 'timeout' | 'cancel' | undefined;
   const { code, error } = await new Promise<{ code: number | null; error?: Error }>((resolve) => {
     const child = spawn(exe, args, { cwd, stdio: ['ignore', fd, fd], windowsHide: true, detached: process.platform !== 'win32' });
     closeSync(fd);
-    const timer = setTimeout(() => {
-      timedOut = true;
+    const stop = (why: 'timeout' | 'cancel') => {
+      stopped ??= why;
       killTree(child.pid);
-    }, timeoutS * 1000);
-    child.once('error', (err) => {
+    };
+    const timer = setTimeout(() => stop('timeout'), timeoutS * 1000);
+    const onAbort = () => stop('cancel');
+    const { signal, onProgress } = hooks;
+    signal?.addEventListener('abort', onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+    const ticker =
+      onProgress &&
+      setInterval(() => {
+        const elapsed = Math.round((Date.now() - started) / 1000);
+        fs.stat(logPath).then((s) => onProgress(elapsed, `running ${elapsed}s, ${Math.round(s.size / 1024)} KB output`), () => {});
+      }, hooks.progressIntervalMs ?? 30_000);
+    const done = (result: { code: number | null; error?: Error }) => {
       clearTimeout(timer);
-      resolve({ code: null, error: err });
-    });
-    child.once('exit', (c) => {
-      clearTimeout(timer);
-      resolve({ code: c });
-    });
+      clearInterval(ticker);
+      signal?.removeEventListener('abort', onAbort);
+      resolve(result);
+    };
+    child.once('error', (err) => done({ code: null, error: err }));
+    child.once('exit', (c) => done({ code: c }));
   });
   await fs.rm(scriptPath, { force: true });
   if (error) {
@@ -115,7 +134,8 @@ export async function runCommand(spec: RunSpec, baseDir: string): Promise<{ ok: 
   for await (const line of readline.createInterface({ input: createReadStream(logPath, 'utf8'), crlfDelay: Infinity })) digest.push(line);
 
   const secs = ((Date.now() - started) / 1000).toFixed(1);
-  const status = timedOut ? `timed out after ${timeoutS}s, process tree killed` : `exit ${code ?? 'killed'}`;
+  const status =
+    stopped === 'timeout' ? `timed out after ${timeoutS}s, process tree killed` : stopped === 'cancel' ? 'cancelled, process tree killed' : `exit ${code ?? 'killed'}`;
   const header = `${status} in ${secs}s, ${digest.count} lines. Full output: ${logPath}`;
-  return { ok: !timedOut && code === 0, text: [header, ...digest.render()].join('\n') };
+  return { ok: !stopped && code === 0, text: [header, ...digest.render()].join('\n') };
 }

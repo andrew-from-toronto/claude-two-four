@@ -25,4 +25,22 @@ describe('runCommand', () => {
     expect(ok).toBe(false);
     expect(text).toMatch(/^timed out after 1s/);
   }, 30_000);
+
+  it('kills the command when the signal aborts', async () => {
+    const command = process.platform === 'win32' ? 'Start-Sleep -Seconds 30' : 'sleep 30';
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 1000);
+    const { ok, text } = await runCommand({ command }, os.tmpdir(), { signal: controller.signal });
+    expect(ok).toBe(false);
+    expect(text).toMatch(/^cancelled, process tree killed in /);
+  }, 30_000);
+
+  it('reports progress while the command runs', async () => {
+    const command = process.platform === 'win32' ? 'Start-Sleep -Seconds 2' : 'sleep 2';
+    const ticks: number[] = [];
+    const { ok } = await runCommand({ command }, os.tmpdir(), { onProgress: (s) => ticks.push(s), progressIntervalMs: 200 });
+    expect(ok).toBe(true);
+    expect(ticks.length).toBeGreaterThan(1);
+    expect(ticks).toEqual([...ticks].sort((a, b) => a - b));
+  }, 30_000);
 });
