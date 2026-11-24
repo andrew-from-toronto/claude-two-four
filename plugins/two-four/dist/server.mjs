@@ -287,8 +287,8 @@ var require_utils2 = __commonJS({
       }
       return output;
     };
-    exports.basename = (path3, { windows } = {}) => {
-      const segs = path3.split(windows ? /[\\/]/ : "/");
+    exports.basename = (path5, { windows } = {}) => {
+      const segs = path5.split(windows ? /[\\/]/ : "/");
       const last = segs[segs.length - 1];
       if (last === "") {
         return segs[segs.length - 2];
@@ -2102,10 +2102,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path3) {
-  if (!path3)
+function getElementAtPath(obj, path5) {
+  if (!path5)
     return obj;
-  return path3.reduce((acc, key) => acc?.[key], obj);
+  return path5.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -2445,11 +2445,11 @@ function explicitlyAborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path3, issues) {
+function prefixIssues(path5, issues) {
   return issues.map((iss) => {
     var _a3;
     (_a3 = iss).path ?? (_a3.path = []);
-    iss.path.unshift(path3);
+    iss.path.unshift(path5);
     return iss;
   });
 }
@@ -2910,16 +2910,16 @@ function flattenError(error2, mapper = (issue2) => issue2.message) {
 }
 function formatError(error2, mapper = (issue2) => issue2.message) {
   const fieldErrors = { _errors: [] };
-  const processError = (error3, path3 = []) => {
+  const processError = (error3, path5 = []) => {
     for (const issue2 of error3.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path3, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path5, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path5, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path5, ...issue2.path]);
       } else {
-        const fullpath = [...path3, ...issue2.path];
+        const fullpath = [...path5, ...issue2.path];
         if (fullpath.length === 0) {
           fieldErrors._errors.push(mapper(issue2));
         } else {
@@ -12283,9 +12283,9 @@ var rev2026Codec = {
     });
     const parsed = buildSchemas2026().RequestMetaEnvelopeSchema.safeParse(meta2);
     if (!parsed.success) for (const issue2 of parsed.error.issues) {
-      const path3 = issue2.path.map(String);
-      const key = path3.length > 0 ? path3.join(".") : "_meta";
-      if (path3.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
+      const path5 = issue2.path.map(String);
+      const key = path5.length > 0 ? path5.join(".") : "_meta";
+      if (path5.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
       issues.push({
         key,
         problem: issue2.message
@@ -12612,17 +12612,17 @@ function scanXMcpHeaderDeclarations(inputSchema) {
   const declarations = [];
   const seenLower = /* @__PURE__ */ new Map();
   let numberFault;
-  const visit = (node2, path3, reachable) => {
+  const visit = (node2, path5, reachable) => {
     if (node2 === null || typeof node2 !== "object") return void 0;
     const schema = node2;
     if (X_MCP_HEADER_KEY in schema) {
-      if (!reachable || path3.length === 0) return `${pathName(path3)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
+      if (!reachable || path5.length === 0) return `${pathName(path5)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
       const raw = schema[X_MCP_HEADER_KEY];
-      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path3)}: x-mcp-header MUST be a non-empty string`;
-      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path3)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
+      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path5)}: x-mcp-header MUST be a non-empty string`;
+      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path5)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
       const type = typeof schema.type === "string" ? schema.type : void 0;
       if (type === void 0 || !PERMITTED_X_MCP_HEADER_TYPES.has(type)) {
-        const fault$1 = `${pathName(path3)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
+        const fault$1 = `${pathName(path5)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
         if (type !== "number") return fault$1;
         numberFault ??= fault$1;
       }
@@ -12631,14 +12631,14 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (prior !== void 0) return `x-mcp-header '${raw}' is not case-insensitively unique (also declared as '${prior}')`;
       seenLower.set(lower, raw);
       declarations.push({
-        path: path3,
+        path: path5,
         headerName: raw,
         type
       });
     }
     const properties = schema.properties;
     if (properties !== null && typeof properties === "object") for (const [key, child] of Object.entries(properties)) {
-      const fault$1 = visit(child, [...path3, key], reachable);
+      const fault$1 = visit(child, [...path5, key], reachable);
       if (fault$1 !== void 0) return fault$1;
     }
     for (const k of NON_REACHABLE_SUBSCHEMA_KEYWORDS) {
@@ -12646,7 +12646,7 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (sub === void 0) continue;
       const branches = Array.isArray(sub) ? sub : sub !== null && typeof sub === "object" && OBJECT_VALUED_SUBSCHEMA_KEYWORDS.has(k) ? Object.values(sub) : [sub];
       for (const branch of branches) {
-        const fault$1 = visit(branch, [...path3, `<${k}>`], false);
+        const fault$1 = visit(branch, [...path5, `<${k}>`], false);
         if (fault$1 !== void 0) return fault$1;
       }
     }
@@ -12691,8 +12691,8 @@ var OBJECT_VALUED_SUBSCHEMA_KEYWORDS = /* @__PURE__ */ new Set([
   "$defs",
   "definitions"
 ]);
-function pathName(path3) {
-  return path3.length === 0 ? "<root>" : path3.join(".");
+function pathName(path5) {
+  return path5.length === 0 ? "<root>" : path5.join(".");
 }
 var HEADER_MISMATCH_ERROR_CODE = -32020;
 var INBOUND_VALIDATION_LADDER = [
@@ -12984,7 +12984,7 @@ var PROPERTY_KEYS_BY_TYPE = {
   array: shapeKeys([UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema])
 };
 var SUPPORTED_STRING_FORMATS = new Set(StringSchemaSchema.shape.format.unwrap().options);
-function walkProperty(node2, path3, vendor, unsupported) {
+function walkProperty(node2, path5, vendor, unsupported) {
   if (!isJsonObject(node2)) return node2;
   const allowedKeys = typeof node2.type === "string" && Object.hasOwn(PROPERTY_KEYS_BY_TYPE, node2.type) ? PROPERTY_KEYS_BY_TYPE[node2.type] : void 0;
   if (allowedKeys === void 0) return node2;
@@ -12992,8 +12992,8 @@ function walkProperty(node2, path3, vendor, unsupported) {
   for (const [key, value] of Object.entries(node2)) if (allowedKeys.has(key) || isAnnotationOnlyJsonSchemaKeyword(key)) pruned[key] = value;
   else if (key === "pattern" && node2.type === "string" && typeof node2.format === "string") {
     if (!SUPPORTED_STRING_FORMATS.has(node2.format)) pruned[key] = value;
-    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path3}.${key}`);
-  } else unsupported.push(`${path3}.${key}`);
+    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path5}.${key}`);
+  } else unsupported.push(`${path5}.${key}`);
   return pruned;
 }
 function walkRequestedSchema(converted, vendor) {
@@ -13010,11 +13010,11 @@ function describeUnsupportedProperties(pruned, fallback) {
   const offenders = Object.entries(pruned.properties).filter(([, node2]) => !parseSchema(PrimitiveSchemaDefinitionSchema, node2).success).map(([name]) => `properties.${name}`);
   return offenders.length > 0 ? offenders.join(", ") : fallback;
 }
-function findDroppedConstraintPaths(original, parsed, path3 = "") {
-  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path3}[${index}]`));
+function findDroppedConstraintPaths(original, parsed, path5 = "") {
+  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path5}[${index}]`));
   if (!isJsonObject(original) || !isJsonObject(parsed)) return [];
   return Object.entries(original).flatMap(([key, value]) => {
-    const childPath = path3 ? `${path3}.${key}` : key;
+    const childPath = path5 ? `${path5}.${key}` : key;
     if (!Object.prototype.hasOwnProperty.call(parsed, key)) return isAnnotationOnlyJsonSchemaKeyword(key) ? [] : [childPath];
     return findDroppedConstraintPaths(value, parsed[key], childPath);
   });
@@ -14737,9 +14737,9 @@ var require_codegen = /* @__PURE__ */ __commonJSMin(((exports) => {
     }
   };
   var Label = class extends Node {
-    constructor(label) {
+    constructor(label2) {
       super();
-      this.label = label;
+      this.label = label2;
       this.names = {};
     }
     render({ _n }) {
@@ -14747,9 +14747,9 @@ var require_codegen = /* @__PURE__ */ __commonJSMin(((exports) => {
     }
   };
   var Break = class extends Node {
-    constructor(label) {
+    constructor(label2) {
       super();
-      this.label = label;
+      this.label = label2;
       this.names = {};
     }
     render({ _n }) {
@@ -15114,11 +15114,11 @@ var require_codegen = /* @__PURE__ */ __commonJSMin(((exports) => {
     endFor() {
       return this._endBlockNode(For);
     }
-    label(label) {
-      return this._leafNode(new Label(label));
+    label(label2) {
+      return this._leafNode(new Label(label2));
     }
-    break(label) {
-      return this._leafNode(new Break(label));
+    break(label2) {
+      return this._leafNode(new Break(label2));
     }
     return(value) {
       const node2 = new Return();
@@ -17155,8 +17155,8 @@ var require_utils = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     for (let i = 0; i < str.length; i++) if (str[i] === token) ind++;
     return ind;
   }
-  function removeDotSegments(path3) {
-    let input = path3;
+  function removeDotSegments(path5) {
+    let input = path5;
     const output = [];
     let nextSlash = -1;
     let len = 0;
@@ -17494,8 +17494,8 @@ var require_schemes = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     }
     if (wsComponent.resourceName) {
       const queryIndex = wsComponent.resourceName.indexOf("?");
-      const path3 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
-      wsComponent.path = path3 && path3 !== "/" ? path3 : void 0;
+      const path5 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
+      wsComponent.path = path5 && path5 !== "/" ? path5 : void 0;
       wsComponent.query = queryIndex === -1 ? void 0 : wsComponent.resourceName.slice(queryIndex + 1);
       wsComponent.resourceName = void 0;
     }
@@ -21598,11 +21598,11 @@ var require_dist = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     if (!f) throw new Error(`Unknown format "${name}"`);
     return f;
   };
-  function addFormats2(ajv, list, fs3, exportName) {
+  function addFormats2(ajv, list, fs5, exportName) {
     var _a3;
     var _b;
     (_a3 = (_b = ajv.opts.code).formats) !== null && _a3 !== void 0 || (_b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`);
-    for (const f of list) ajv.addFormat(f, fs3[f]);
+    for (const f of list) ajv.addFormat(f, fs5[f]);
   }
   module.exports = exports = formatsPlugin;
   Object.defineProperty(exports, "__esModule", { value: true });
@@ -24036,10 +24036,238 @@ function toError(value) {
   return value instanceof Error ? value : new Error(String(value));
 }
 
+// src/ci.ts
+import { execFile } from "node:child_process";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+
+// src/text.ts
+var ANSI = /\x1b\[[0-9;?]*[ -/]*[@-~]/g;
+var MAX_LINE = 400;
+function clean(line) {
+  const s = (line.replace(ANSI, "").split("\r").filter(Boolean).pop() ?? "").trimEnd();
+  return s.length > MAX_LINE ? `${s.slice(0, MAX_LINE)}...` : s;
+}
+function compilePattern(source, ignoreCase = false) {
+  const m = /^\(\?([ims]+)\)/.exec(source);
+  const flags = new Set(m ? m[1].split("") : []);
+  if (ignoreCase) flags.add("i");
+  return new RegExp(m ? source.slice(m[0].length) : source, [...flags].join(""));
+}
+
+// src/ci.ts
+var execFileP = promisify(execFile);
+var CI_DIR = path.join(os.tmpdir(), "claude-two-four", "ci");
+var MAX_GREP_JOBS = 20;
+var FAILED = /* @__PURE__ */ new Set(["failure", "timed_out", "startup_failure"]);
+var MAX_LOG_JOBS = 5;
+function parseTarget(raw) {
+  const t = raw.trim();
+  let m = /github\.com\/([^/]+\/[^/]+)\/actions\/runs\/(\d+)(?:\/job\/(\d+))?/.exec(t);
+  if (m) return { kind: "run", repo: m[1], id: m[2], job: m[3] };
+  m = /github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/.exec(t);
+  if (m) return { kind: "pr", repo: m[1], number: m[2] };
+  m = /^(?:#|pr:)(\d+)$/i.exec(t);
+  if (m) return { kind: "pr", number: m[1] };
+  if (/^\d{6,}$/.test(t)) return { kind: "run", id: t };
+  if (/^\d+$/.test(t)) return { kind: "pr", number: t };
+  if (/^[0-9a-f]{7,40}$/i.test(t)) return { kind: "sha", sha: t.toLowerCase() };
+  return { kind: "branch", name: t };
+}
+var TIMESTAMP = /^\uFEFF?(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)[\d.]*Z ?/;
+function condenseLog(text, steps, tail) {
+  const lines = [];
+  let at = "";
+  for (const raw of text.split(/\r?\n/)) {
+    const m = TIMESTAMP.exec(raw);
+    if (m) at = m[1];
+    const line = clean(m ? raw.slice(m[0].length) : raw);
+    if (line && !/^##\[(group|endgroup)\]/.test(line)) lines.push({ at, text: line });
+  }
+  const failed = steps.filter((s) => FAILED.has(s.conclusion) && s.startedAt && s.completedAt);
+  const windows = failed.length ? failed.map((s) => {
+    const window = lines.filter((l) => l.at >= s.startedAt.slice(0, 19) && l.at <= s.completedAt.slice(0, 19)).map((l) => l.text);
+    const end = window.findLastIndex((l) => l.includes("##[error]"));
+    return { name: s.name, lines: end >= 0 ? window.slice(0, end + 1) : window };
+  }) : [{ name: "(whole job)", lines: lines.map((l) => l.text) }];
+  const out = [];
+  for (const w of windows) {
+    out.push(`    step: ${w.name}`);
+    const errors = [...new Set(w.lines.filter((l) => l.includes("##[error]")).map((l) => l.replace("##[error]", "").trim()))];
+    if (errors.length) out.push("      errors:", ...errors.slice(0, 20).map((e) => `        ${e}`));
+    if (tail > 0) out.push(`      last ${Math.min(tail, w.lines.length)} lines:`, ...w.lines.slice(-tail).map((l) => `        ${l}`));
+  }
+  return out;
+}
+function grepLog(text, re, ctx, max) {
+  const lines = text.split(/\r?\n/).map((l) => clean(l.replace(TIMESTAMP, "")));
+  const hits = [];
+  let total = 0;
+  for (let n = 0; n < lines.length; n++) {
+    if (!re.test(lines[n])) continue;
+    total++;
+    if (hits.length < max) hits.push(n);
+  }
+  const out = [`    ${total} matching lines`];
+  const hitSet = new Set(hits);
+  let last = -1;
+  for (const h of hits) {
+    const from = Math.max(0, h - ctx, last + 1);
+    const to = Math.min(lines.length - 1, h + ctx);
+    if (last >= 0 && from > last + 1) out.push("      --");
+    for (let n = from; n <= to; n++) out.push(`      ${n + 1}${hitSet.has(n) ? ":" : "-"} ${lines[n]}`);
+    last = Math.max(last, to);
+  }
+  if (total > hits.length) out.push(`    (${total - hits.length} more; search the log file)`);
+  return out;
+}
+async function gh(args, cwd) {
+  try {
+    const { stdout } = await execFileP("gh", args, { cwd, maxBuffer: 256 * 1024 * 1024, windowsHide: true });
+    return stdout;
+  } catch (e) {
+    const err = e;
+    throw new Error((err.stderr || err.message).trim());
+  }
+}
+async function fullSha(sha, repo, cwd) {
+  if (sha.length === 40) return sha;
+  if (!repo) {
+    try {
+      const { stdout } = await execFileP("git", ["rev-parse", "--verify", "--quiet", `${sha}^{commit}`], { cwd, windowsHide: true });
+      if (stdout.trim()) return stdout.trim();
+    } catch {
+    }
+  }
+  return (await gh(["api", `repos/${repo ?? "{owner}/{repo}"}/commits/${sha}`, "--jq", ".sha"], cwd)).trim();
+}
+async function latestRuns(filter, repoArgs, cwd) {
+  const runs = JSON.parse(
+    await gh(["run", "list", ...filter, ...repoArgs, "--limit", "100", "--json", "databaseId,workflowName,createdAt"], cwd)
+  );
+  const newest = /* @__PURE__ */ new Map();
+  for (const r of runs) {
+    const cur = newest.get(r.workflowName);
+    if (!cur || r.createdAt > cur.createdAt) newest.set(r.workflowName, r);
+  }
+  return [...newest.values()].map((r) => String(r.databaseId));
+}
+var label = (status, conclusion) => status !== "completed" ? status.toUpperCase() : conclusion === "success" ? "PASS" : conclusion === "failure" ? "FAIL" : conclusion.toUpperCase();
+async function fetchRun(id, repo, cwd) {
+  const base = `repos/${repo ?? "{owner}/{repo}"}/actions/runs/${id}`;
+  const [runJson, jobLines] = await Promise.all([
+    gh(["api", base], cwd),
+    gh(["api", "--paginate", `${base}/jobs?per_page=100`, "--jq", ".jobs[]"], cwd)
+  ]);
+  const run = JSON.parse(runJson);
+  const jobs = jobLines.split("\n").filter(Boolean).map((l) => JSON.parse(l)).map((j) => ({
+    databaseId: j.id,
+    name: j.name,
+    status: j.status,
+    conclusion: j.conclusion ?? "",
+    steps: (j.steps ?? []).map((s) => ({
+      name: s.name,
+      conclusion: s.conclusion ?? "",
+      ...s.started_at ? { startedAt: s.started_at } : {},
+      ...s.completed_at ? { completedAt: s.completed_at } : {}
+    }))
+  }));
+  return {
+    databaseId: run.id,
+    workflowName: run.name,
+    displayTitle: run.display_title,
+    event: run.event,
+    status: run.status,
+    conclusion: run.conclusion ?? "",
+    url: run.html_url,
+    headSha: run.head_sha,
+    headBranch: run.head_branch,
+    jobs
+  };
+}
+async function jobLog(job, repo, cwd) {
+  const file = path.join(CI_DIR, `${job.databaseId}.log`);
+  const cached2 = await fs.readFile(file, "utf8").catch(() => null);
+  if (cached2 !== null) return { text: cached2, file };
+  const text = await gh(["api", `repos/${repo ?? "{owner}/{repo}"}/actions/jobs/${job.databaseId}/logs`], cwd);
+  await fs.mkdir(CI_DIR, { recursive: true });
+  const temp = `${file}.${process.pid}.tmp`;
+  await fs.writeFile(temp, text);
+  await fs.rename(temp, file);
+  return { text, file };
+}
+async function readCi(spec, cwd) {
+  let grep;
+  let nameFilter;
+  try {
+    grep = spec.grep ? compilePattern(spec.grep) : void 0;
+    nameFilter = spec.jobs ? compilePattern(spec.jobs) : void 0;
+  } catch (e) {
+    return { ok: false, text: `Invalid pattern: ${e.message}` };
+  }
+  const target = parseTarget(spec.target);
+  const repo = spec.repo ?? ("repo" in target ? target.repo : void 0);
+  const repoArgs = repo ? ["-R", repo] : [];
+  const tail = spec.log_lines ?? 30;
+  const out = [];
+  try {
+    let ids;
+    if (target.kind === "run") ids = [target.id];
+    else if (target.kind === "branch") {
+      ids = await latestRuns(["--branch", target.name], repoArgs, cwd);
+      out.push(`branch ${target.name}: latest run per workflow`);
+    } else {
+      const sha = target.kind === "pr" ? JSON.parse(await gh(["pr", "view", target.number, ...repoArgs, "--json", "headRefOid"], cwd)).headRefOid : await fullSha(target.sha, repo, cwd);
+      ids = await latestRuns(["--commit", sha], repoArgs, cwd);
+      out.push(`${target.kind === "pr" ? `PR #${target.number} head` : "commit"} ${sha}`);
+    }
+    if (!ids.length) return { ok: true, text: [...out, "No workflow runs found."].join("\n") };
+    const runs = await Promise.all(ids.map((id) => fetchRun(id, repo, cwd)));
+    const pick2 = (run) => target.kind === "run" && target.job ? run.jobs.filter((j) => String(j.databaseId) === target.job) : run.jobs.filter((j) => nameFilter ? nameFilter.test(j.name) : FAILED.has(j.conclusion));
+    const limit = grep ? MAX_GREP_JOBS : MAX_LOG_JOBS;
+    const logJobs = [];
+    const hasLog = (job) => job.status === "completed" && job.conclusion !== "skipped";
+    for (const run of runs) for (const job of pick2(run)) if (hasLog(job) && logJobs.length < limit) logJobs.push(job);
+    const logs = new Map(
+      await Promise.all(
+        logJobs.map(async (job) => {
+          try {
+            const { text, file } = await jobLog(job, repo, cwd);
+            const body = grep ? grepLog(text, grep, spec.context ?? 0, spec.max_matches ?? 50) : condenseLog(text, job.steps ?? [], tail);
+            return [job.databaseId, [`    log: ${file}`, ...body]];
+          } catch (e) {
+            return [job.databaseId, [`    log unavailable: ${e.message}`]];
+          }
+        })
+      )
+    );
+    for (const run of runs) {
+      out.push("", `${label(run.status, run.conclusion)} ${run.workflowName}: ${run.displayTitle} (${run.event}, ${run.headBranch} @ ${run.headSha.slice(0, 8)}) ${run.url}`);
+      const counts = /* @__PURE__ */ new Map();
+      for (const j of run.jobs) counts.set(j.conclusion || j.status, (counts.get(j.conclusion || j.status) ?? 0) + 1);
+      out.push(run.jobs.length ? `  ${run.jobs.length} jobs: ${[...counts].map(([k, n]) => `${n} ${k}`).join(", ")}` : "  no jobs ran");
+      for (const job of pick2(run)) {
+        const failedSteps = (job.steps ?? []).filter((s) => FAILED.has(s.conclusion)).map((s) => s.name);
+        out.push(`  ${label(job.status, job.conclusion)} job ${job.name} (${job.databaseId})${failedSteps.length ? `, failed step: ${failedSteps.join(", ")}` : ""}`);
+        const log = logs.get(job.databaseId);
+        if (log) out.push(...log);
+        else if (job.conclusion === "skipped") out.push("    (skipped; no log)");
+        else if (job.status === "completed") out.push(`    (log not fetched: limit ${limit} jobs per call; narrow with jobs or a job URL)`);
+        else out.push("    (in progress; log available when the job completes)");
+      }
+    }
+    return { ok: true, text: out.join("\n").trimStart() };
+  } catch (e) {
+    return { ok: false, text: [...out, `gh failed: ${e.message}`].join("\n") };
+  }
+}
+
 // src/edit.ts
 import { randomBytes } from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { promises as fs2 } from "node:fs";
+import path2 from "node:path";
 var UTF8_BOM = "\uFEFF";
 var TYPOGRAPHY = {
   "\u2018": "'",
@@ -24132,13 +24360,13 @@ function isNotFound(e) {
   return e?.code === "ENOENT";
 }
 async function resolveTarget(filePath, baseDir2) {
-  const abs = path.resolve(baseDir2, filePath);
+  const abs = path2.resolve(baseDir2, filePath);
   try {
-    return await fs.realpath(abs);
+    return await fs2.realpath(abs);
   } catch (e) {
     if (!isNotFound(e)) throw e;
     try {
-      return path.join(await fs.realpath(path.dirname(abs)), path.basename(abs));
+      return path2.join(await fs2.realpath(path2.dirname(abs)), path2.basename(abs));
     } catch {
       return abs;
     }
@@ -24148,7 +24376,7 @@ async function loadFile(real) {
   const state = { path: real, original: null, text: null, bom: false, mode: void 0, created: false, edits: 0 };
   let stat;
   try {
-    stat = await fs.stat(real);
+    stat = await fs2.stat(real);
   } catch (e) {
     if (isNotFound(e)) return state;
     return errorMessage(e);
@@ -24156,7 +24384,7 @@ async function loadFile(real) {
   if (!stat.isFile()) return "not a regular file";
   let buf;
   try {
-    buf = await fs.readFile(real);
+    buf = await fs2.readFile(real);
   } catch (e) {
     return errorMessage(e);
   }
@@ -24199,21 +24427,21 @@ async function commit(states) {
   const temps = states.map((state) => ({ state, temp: `${state.path}.${randomBytes(6).toString("hex")}.tmp` }));
   const written = await Promise.allSettled(
     temps.map(async ({ state, temp }) => {
-      if (state.created) await fs.mkdir(path.dirname(state.path), { recursive: true });
-      await fs.writeFile(temp, (state.bom ? UTF8_BOM : "") + state.text, { encoding: "utf8", mode: state.mode, flag: "wx" });
+      if (state.created) await fs2.mkdir(path2.dirname(state.path), { recursive: true });
+      await fs2.writeFile(temp, (state.bom ? UTF8_BOM : "") + state.text, { encoding: "utf8", mode: state.mode, flag: "wx" });
     })
   );
   const writeFailure = written.find((r) => r.status === "rejected");
   if (writeFailure) {
-    await Promise.all(temps.map((t) => fs.rm(t.temp, { force: true })));
+    await Promise.all(temps.map((t) => fs2.rm(t.temp, { force: true })));
     throw writeFailure.reason;
   }
-  const renamed = await Promise.allSettled(temps.map(({ state, temp }) => fs.rename(temp, state.path)));
+  const renamed = await Promise.allSettled(temps.map(({ state, temp }) => fs2.rename(temp, state.path)));
   const renameFailure = renamed.find((r) => r.status === "rejected");
   if (renameFailure) {
     const restored = await Promise.allSettled(
       temps.map(
-        ({ state, temp }, i) => renamed[i].status === "rejected" ? fs.rm(temp, { force: true }) : state.original === null ? fs.rm(state.path, { force: true }) : fs.writeFile(state.path, state.original)
+        ({ state, temp }, i) => renamed[i].status === "rejected" ? fs2.rm(temp, { force: true }) : state.original === null ? fs2.rm(state.path, { force: true }) : fs2.writeFile(state.path, state.original)
       )
     );
     const stuck = temps.filter((_, i) => renamed[i].status === "fulfilled" && restored[i].status === "rejected");
@@ -24285,38 +24513,239 @@ ${lines.join("\n")}`;
 ${lines.join("\n")}`;
 }
 
+// src/run.ts
+import { execFile as execFile2, spawn } from "node:child_process";
+import { randomBytes as randomBytes2 } from "node:crypto";
+import { closeSync, createReadStream, openSync, promises as fs3 } from "node:fs";
+import os2 from "node:os";
+import path3 from "node:path";
+import readline from "node:readline";
+import { promisify as promisify2 } from "node:util";
+
+// src/digest.ts
+var FULL_OUTPUT_LINES = 60;
+var MAX_MATCHES = 100;
+var VSTEST_FAIL = /^\s*Failed (.+) \[[^\]]*\]$/;
+var MTP_FAIL = /^\s*failed (.+) \([^()]*\)$/;
+var SUMMARY = /^\s*(?:(?:Failed|Passed|Skipped)!\s+- Failed:|Test run summary:|(?:total|failed|succeeded|skipped|duration):\s)/;
+var BUILD_ERROR = /: error [A-Z]+\d+:/;
+var FRAME = /^\s*at /;
+var USER_FRAME = / in .+:(?:line )?\d+$/;
+var TRACE_NOISE = /^\s*-+ ?(End of stack trace|Inner Stack Trace)/;
+var MAX_BLOCK = 25;
+var MAX_FAILURES = 20;
+var DotnetTestDigest = class {
+  failures = [];
+  block = null;
+  frames = 0;
+  errors = /* @__PURE__ */ new Set();
+  summary = [];
+  push(line) {
+    if (VSTEST_FAIL.test(line) || MTP_FAIL.test(line)) {
+      this.block = [line.trim()];
+      this.frames = 0;
+      this.failures.push(this.block);
+    } else if (BUILD_ERROR.test(line)) {
+      this.errors.add(line.trim());
+      this.block = null;
+    } else if (SUMMARY.test(line)) {
+      this.summary.push(line.trim());
+      this.block = null;
+    } else if (this.block) {
+      if (!line.trim()) this.block = null;
+      else if (this.block.length >= MAX_BLOCK || TRACE_NOISE.test(line)) return;
+      else if (!FRAME.test(line)) this.block.push(`  ${line.trim()}`);
+      else if (USER_FRAME.test(line) && this.frames < 3) {
+        this.block.push(`  ${line.trim()}`);
+        this.frames++;
+      }
+    }
+  }
+  render() {
+    const out = [];
+    if (this.failures.length) {
+      out.push(`-- failed tests (${this.failures.length})`);
+      for (const b of this.failures.slice(0, MAX_FAILURES)) out.push(...b);
+      if (this.failures.length > MAX_FAILURES) out.push(`(${this.failures.length - MAX_FAILURES} more failed tests in the full output)`);
+    }
+    if (this.errors.size) out.push(`-- build errors (${this.errors.size})`, ...[...this.errors].slice(0, 30));
+    if (this.summary.length) out.push("-- summary", ...this.summary.slice(0, 30));
+    return out.length ? out : ["-- dotnet test: no failed tests, build errors or summary found"];
+  }
+};
+var OutputDigest = class {
+  constructor(opts) {
+    this.opts = opts;
+    if (opts.dotnetTest) this.dotnet = new DotnetTestDigest();
+  }
+  opts;
+  count = 0;
+  head = [];
+  tailBuf = [];
+  matches = [];
+  matchTotal = 0;
+  matchShown = 0;
+  after = 0;
+  dotnet;
+  push(raw) {
+    const line = clean(raw);
+    this.count++;
+    if (this.head.length <= FULL_OUTPUT_LINES) this.head.push(line);
+    this.tailBuf.push(line);
+    if (this.tailBuf.length > this.opts.tail) this.tailBuf.shift();
+    this.dotnet?.push(line);
+    if (!this.opts.match) return;
+    if (this.opts.match.test(line)) {
+      this.matchTotal++;
+      if (this.matches.length < MAX_MATCHES) {
+        this.matches.push(`${this.count}: ${line}`);
+        this.matchShown++;
+      }
+      this.after = this.opts.contextAfter ?? 0;
+    } else if (this.after > 0) {
+      this.after--;
+      if (this.matches.length < MAX_MATCHES) this.matches.push(`${this.count}- ${line}`);
+    }
+  }
+  render() {
+    if (this.count <= FULL_OUTPUT_LINES) return this.count ? ["-- output", ...this.head] : ["-- no output"];
+    const out = this.dotnet ? this.dotnet.render() : [];
+    if (this.opts.match) {
+      out.push(`-- lines matching ${this.opts.match} (${this.matchTotal})`, ...this.matches);
+      if (this.matchTotal > this.matchShown) out.push(`(${this.matchTotal - this.matchShown} more matches in the full output)`);
+    }
+    if (this.opts.tail > 0) out.push(`-- last ${this.tailBuf.length} lines`, ...this.tailBuf);
+    return out;
+  }
+};
+
+// src/run.ts
+var execFileP2 = promisify2(execFile2);
+var OUTPUT_DIR = path3.join(os2.tmpdir(), "claude-two-four", "run");
+var pwshScript = (command) => `${command}
+$__ok = $?
+if ($__ok) { exit 0 }
+if ($LASTEXITCODE) { exit $LASTEXITCODE }
+exit 1
+`;
+async function bashPath() {
+  if (process.platform !== "win32") return "/bin/bash";
+  if (process.env.CLAUDE_CODE_GIT_BASH_PATH) return process.env.CLAUDE_CODE_GIT_BASH_PATH;
+  const candidates = [path3.join(process.env.ProgramFiles ?? "C:\\Program Files", "Git", "bin", "bash.exe")];
+  try {
+    const { stdout } = await execFileP2("where", ["git"], { windowsHide: true });
+    for (const git of stdout.split(/\r?\n/).filter(Boolean)) candidates.unshift(path3.resolve(path3.dirname(git), "..", "bin", "bash.exe"));
+  } catch {
+  }
+  for (const c of candidates) if (await fs3.stat(c).then(() => true, () => false)) return c;
+  throw new Error("Git Bash not found; set CLAUDE_CODE_GIT_BASH_PATH");
+}
+function killTree(pid) {
+  if (pid === void 0) return;
+  if (process.platform === "win32") execFile2("taskkill", ["/pid", String(pid), "/T", "/F"], { windowsHide: true }, () => {
+  });
+  else {
+    try {
+      process.kill(-pid, "SIGKILL");
+    } catch {
+    }
+  }
+}
+async function runCommand(spec, baseDir2, hooks = {}) {
+  let match;
+  try {
+    match = spec.match ? compilePattern(spec.match) : void 0;
+  } catch (e) {
+    return { ok: false, text: `Invalid match pattern: ${e.message}` };
+  }
+  const shell = spec.shell ?? (process.platform === "win32" ? "pwsh" : "bash");
+  const cwd = path3.resolve(baseDir2, spec.cwd ?? ".");
+  if (!await fs3.stat(cwd).then((s) => s.isDirectory(), () => false)) return { ok: false, text: `cwd not found: ${cwd}` };
+  await fs3.mkdir(OUTPUT_DIR, { recursive: true });
+  const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").replace(/\..*$/, "").replace("T", "-");
+  const slug = spec.command.trim().split(/\s+/).slice(0, 3).join("-").replace(/[^\w.-]+/g, "").slice(0, 40) || "cmd";
+  const base = path3.join(OUTPUT_DIR, `${stamp}-${randomBytes2(2).toString("hex")}-${slug}`);
+  const logPath = `${base}.log`;
+  const scriptPath = `${base}.${shell === "pwsh" ? "ps1" : "sh"}`;
+  await fs3.writeFile(scriptPath, shell === "pwsh" ? pwshScript(spec.command) : `${spec.command}
+`);
+  let exe;
+  let args;
+  try {
+    [exe, args] = shell === "pwsh" ? ["pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath]] : [await bashPath(), [scriptPath.replace(/\\/g, "/")]];
+  } catch (e) {
+    await fs3.rm(scriptPath, { force: true });
+    return { ok: false, text: e.message };
+  }
+  const started = Date.now();
+  const timeoutS = Math.min(spec.timeout_seconds ?? 600, 3600);
+  const fd = openSync(logPath, "w");
+  let stopped;
+  const { code, error: error2 } = await new Promise((resolve) => {
+    const child = spawn(exe, args, { cwd, stdio: ["ignore", fd, fd], windowsHide: true, detached: process.platform !== "win32" });
+    closeSync(fd);
+    const stop = (why) => {
+      stopped ??= why;
+      killTree(child.pid);
+    };
+    const timer = setTimeout(() => stop("timeout"), timeoutS * 1e3);
+    const onAbort = () => stop("cancel");
+    const { signal, onProgress } = hooks;
+    signal?.addEventListener("abort", onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+    const ticker = onProgress && setInterval(() => {
+      const elapsed = Math.round((Date.now() - started) / 1e3);
+      fs3.stat(logPath).then((s) => onProgress(elapsed, `running ${elapsed}s, ${Math.round(s.size / 1024)} KB output`), () => {
+      });
+    }, hooks.progressIntervalMs ?? 3e4);
+    const done = (result) => {
+      clearTimeout(timer);
+      clearInterval(ticker);
+      signal?.removeEventListener("abort", onAbort);
+      resolve(result);
+    };
+    child.once("error", (err) => done({ code: null, error: err }));
+    child.once("exit", (c) => done({ code: c }));
+  });
+  await fs3.rm(scriptPath, { force: true });
+  if (error2) {
+    await fs3.rm(logPath, { force: true });
+    return { ok: false, text: `Could not start ${exe}: ${error2.message}` };
+  }
+  const digest = new OutputDigest({ tail: spec.tail ?? 30, match, contextAfter: spec.context_after, dotnetTest: spec.preset === "dotnet-test" });
+  for await (const line of readline.createInterface({ input: createReadStream(logPath, "utf8"), crlfDelay: Infinity })) digest.push(line);
+  const secs = ((Date.now() - started) / 1e3).toFixed(1);
+  const status = stopped === "timeout" ? `timed out after ${timeoutS}s, process tree killed` : stopped === "cancel" ? "cancelled, process tree killed" : `exit ${code ?? "killed"}`;
+  const header = `${status} in ${secs}s, ${digest.count} lines. Full output: ${logPath}`;
+  return { ok: !stopped && code === 0, text: [header, ...digest.render()].join("\n") };
+}
+
 // src/search.ts
 var import_picomatch = __toESM(require_picomatch2(), 1);
-import { execFile } from "node:child_process";
-import { promises as fs2 } from "node:fs";
-import path2 from "node:path";
-import { promisify } from "node:util";
-var execFileP = promisify(execFile);
+import { execFile as execFile3 } from "node:child_process";
+import { promises as fs4 } from "node:fs";
+import path4 from "node:path";
+import { promisify as promisify3 } from "node:util";
+var execFileP3 = promisify3(execFile3);
 var GLOB_CHARS = /[*?[\]{}]/;
 var SKIP_DIRS = /* @__PURE__ */ new Set([".git", "node_modules", "bin", "obj", ".vs"]);
 var MAX_FILE_BYTES = 8 * 1024 * 1024;
-var MAX_LINE = 300;
+var MAX_LINE2 = 300;
 var READ_CONCURRENCY = 64;
 var NOCASE = process.platform === "win32";
 var toSlash = (p) => p.replace(/\\/g, "/");
-var clip = (s) => s.length > MAX_LINE ? `${s.slice(0, MAX_LINE)}...` : s;
-function compilePattern(source, ignoreCase) {
-  const m = /^\(\?([ims]+)\)/.exec(source);
-  const flags = new Set(m ? m[1].split("") : []);
-  if (ignoreCase) flags.add("i");
-  return new RegExp(m ? source.slice(m[0].length) : source, [...flags].join(""));
-}
+var clip = (s) => s.length > MAX_LINE2 ? `${s.slice(0, MAX_LINE2)}...` : s;
 function splitGlob(pattern, baseDir2) {
-  const glob = toSlash(path2.resolve(baseDir2, pattern));
+  const glob = toSlash(path4.resolve(baseDir2, pattern));
   const segs = glob.split("/");
   let root = segs.slice(0, segs.findIndex((s) => GLOB_CHARS.test(s))).join("/");
   if (root === "" || /^[A-Za-z]:$/.test(root)) root += "/";
   return { root, glob };
 }
 async function walk(dir, out = []) {
-  const entries = await fs2.readdir(dir, { withFileTypes: true }).catch(() => []);
+  const entries = await fs4.readdir(dir, { withFileTypes: true }).catch(() => []);
   for (const e of entries) {
-    const p = path2.join(dir, e.name);
+    const p = path4.join(dir, e.name);
     if (e.isDirectory()) {
       if (!SKIP_DIRS.has(e.name)) await walk(p, out);
     } else if (e.isFile()) out.push(p);
@@ -24325,13 +24754,13 @@ async function walk(dir, out = []) {
 }
 async function listFiles(dir) {
   try {
-    const { stdout } = await execFileP("git", ["ls-files", "-co", "--exclude-standard", "-z"], {
+    const { stdout } = await execFileP3("git", ["ls-files", "-co", "--exclude-standard", "-z"], {
       cwd: dir,
       maxBuffer: 512 * 1024 * 1024,
       windowsHide: true
     });
     const files = stdout.split("\0").filter(Boolean);
-    if (files.length) return files.map((f) => path2.join(dir, f));
+    if (files.length) return files.map((f) => path4.join(dir, f));
   } catch {
   }
   return walk(dir);
@@ -24340,8 +24769,8 @@ async function resolveFiles(paths, baseDir2) {
   const files = /* @__PURE__ */ new Set();
   const missing = [];
   for (const p of paths) {
-    const abs = path2.resolve(baseDir2, p);
-    const st = await fs2.stat(abs).catch(() => null);
+    const abs = path4.resolve(baseDir2, p);
+    const st = await fs4.stat(abs).catch(() => null);
     if (!st && GLOB_CHARS.test(p)) {
       const { root, glob } = splitGlob(p, baseDir2);
       const isMatch = (0, import_picomatch.default)([glob, `${glob}/**`], { dot: true, nocase: NOCASE });
@@ -24359,7 +24788,7 @@ async function resolveFiles(paths, baseDir2) {
 async function readText(file) {
   let fh;
   try {
-    fh = await fs2.open(file, "r");
+    fh = await fs4.open(file, "r");
     if ((await fh.stat()).size > MAX_FILE_BYTES) return null;
     const buf = await fh.readFile();
     if (buf.subarray(0, 8e3).includes(0)) return null;
@@ -24436,8 +24865,8 @@ ${bad.join("\n")}` };
   };
   await Promise.all(Array.from({ length: READ_CONCURRENCY }, worker));
   const display = (f) => {
-    const rel = path2.relative(baseDir2, f);
-    return toSlash(rel.startsWith("..") || path2.isAbsolute(rel) ? f : rel);
+    const rel = path4.relative(baseDir2, f);
+    return toSlash(rel.startsWith("..") || path4.isAbsolute(rel) ? f : rel);
   };
   const out = [`Searched ${searched} files.`];
   if (missing.length) out.push(`Nothing found at: ${missing.join(", ")}`);
@@ -24472,7 +24901,7 @@ ${bad.join("\n")}` };
 }
 
 // src/server.ts
-var DESCRIPTION = `Create and edit files, across any number of files, in one call.
+var EDIT_DESCRIPTION = `Create and edit files, across any number of files, in one call.
 
 Entries apply in order, so later entries see earlier results, including several edits to one file. All or nothing: if any entry fails, no file is written and every failure is reported with the reason.
 
@@ -24502,13 +24931,48 @@ var searchSpec = object({
   max_matches: number2().int().min(1).optional().describe("Matches shown per pattern (default 200)"),
   files_only: boolean2().optional().describe("List matching files with counts instead of lines")
 });
+var RUN_DESCRIPTION = `Run a shell command, save its full output (stdout and stderr interleaved) to a file, and return a digest.
+
+The result gives the exit code, duration, line count and the output file's path. Short output (60 lines or fewer) comes back whole. Longer output comes back as: the preset's findings, lines matching \`match\` (with \`context_after\` lines after each), then the last \`tail\` lines. Read or search the file for anything else.
+
+- shell: pwsh (default on Windows) or bash (Git Bash on Windows). The exit code is the last command's, like bash.
+- preset "dotnet-test": failed tests with their messages and first user-code stack frames, compiler errors, and run summaries; works for VSTest and Microsoft.Testing.Platform output.
+- No stdin; interactive prompts will hang until the timeout, which kills the whole process tree. Cancelling the call kills it too.`;
+var runSpec = object({
+  command: string2().min(1).describe("Script to run; may span several lines"),
+  shell: _enum(["pwsh", "bash"]).optional().describe("Default pwsh on Windows, bash elsewhere"),
+  cwd: string2().optional().describe("Working directory; default the project directory"),
+  timeout_seconds: number2().int().min(1).max(3600).optional().describe("Default 600"),
+  match: string2().optional().describe("Regex; matching lines are returned. A leading (?i) is accepted"),
+  context_after: number2().int().min(0).max(50).optional().describe("Lines kept after each match"),
+  tail: number2().int().min(0).max(500).optional().describe("Last lines returned (default 30)"),
+  preset: _enum(["dotnet-test"]).optional().describe("Built-in digest for known tools")
+});
+var CI_DESCRIPTION = `Read GitHub Actions results through the gh CLI, returning the failing steps' logs condensed.
+
+target can be: a run URL or job URL; a run id (6+ digits); a PR as "#123", "pr:123", a bare small number or a PR URL; a commit SHA (short SHAs are expanded); or a branch name. For a PR, commit or branch it shows the newest run of each workflow.
+
+For each run: status, job counts, failed jobs with their failed steps, and per failed step the ##[error] lines plus its last log_lines lines (up to 5 jobs, fetched in parallel). Returns immediately; poll again for in-progress runs.
+
+- grep: search the job logs instead (regex, timestamps stripped; a leading (?i) is accepted), with context lines; up to 20 jobs.
+- jobs: regex on job name to choose which jobs' logs to read, passed or failed (default: failed jobs).
+- Each completed job's full log is cached and its path returned ("log: ..."); grep line numbers are that file's, so it can be read or searched directly.`;
+var ciSpec = object({
+  target: string2().min(1).describe("Run/job/PR URL, run id, #PR, commit SHA or branch"),
+  repo: string2().optional().describe("owner/name; default the repo gh infers from the project directory or the URL"),
+  log_lines: number2().int().min(0).max(300).optional().describe("Last lines per failed step (default 30)"),
+  grep: string2().optional().describe("Regex to search the job logs for instead of the failed-step summary"),
+  context: number2().int().min(0).max(20).optional().describe("grep: lines of context around each match (default 0)"),
+  max_matches: number2().int().min(1).max(1e3).optional().describe("grep: matches shown per job (default 50)"),
+  jobs: string2().optional().describe("Regex on job name selecting which jobs to read (default: failed jobs)")
+});
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var handle = serveStdio(() => {
-  const server = new McpServer({ name: "batch-edit", version: "0.2.1" });
+  const server = new McpServer({ name: "two-four", version: "0.3.0" });
   server.registerTool(
     "edit",
     {
-      description: DESCRIPTION,
+      description: EDIT_DESCRIPTION,
       inputSchema: object({ edits: array(editEntry).min(1).describe("Edits to apply in order") })
     },
     async ({ edits }) => {
@@ -24518,6 +24982,20 @@ var handle = serveStdio(() => {
   );
   server.registerTool("search", { description: SEARCH_DESCRIPTION, inputSchema: searchSpec }, async (spec) => {
     const result = await runSearch(spec, baseDir);
+    return { content: [{ type: "text", text: result.text }], isError: !result.ok };
+  });
+  server.registerTool("run", { description: RUN_DESCRIPTION, inputSchema: runSpec }, async (spec, ctx) => {
+    const progressToken = ctx.mcpReq._meta?.progressToken;
+    const result = await runCommand(spec, baseDir, {
+      signal: ctx.mcpReq.signal,
+      // Keeps Claude Code's idle timeout from aborting quiet long runs, including backgrounded ones.
+      onProgress: progressToken === void 0 ? void 0 : (progress, message) => void ctx.mcpReq.notify({ method: "notifications/progress", params: { progressToken, progress, message } }).catch(() => {
+      })
+    });
+    return { content: [{ type: "text", text: result.text }], isError: !result.ok };
+  });
+  server.registerTool("ci", { description: CI_DESCRIPTION, inputSchema: ciSpec }, async (spec) => {
+    const result = await readCi(spec, baseDir);
     return { content: [{ type: "text", text: result.text }], isError: !result.ok };
   });
   return server;

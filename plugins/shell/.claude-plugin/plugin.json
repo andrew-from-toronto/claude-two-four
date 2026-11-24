@@ -1,9 +1,0 @@
-{
-  "name": "shell",
-  "description": "Run commands with full output saved to a file and a filtered digest returned; read GitHub Actions results",
-  "version": "0.1.2",
-  "author": {
-    "name": "andrew-from-toronto"
-  },
-  "repository": "https://github.com/andrew-from-toronto/claude-two-four"
-}

@@ -8,7 +8,9 @@ export function clean(line: string): string {
 }
 
 /** Accepts a leading PCRE-style (?i), (?m) or (?s) group, which JavaScript regex rejects, as flags. */
-export function compilePattern(source: string): RegExp {
+export function compilePattern(source: string, ignoreCase = false): RegExp {
   const m = /^\(\?([ims]+)\)/.exec(source);
-  return m ? new RegExp(source.slice(m[0].length), m[1]) : new RegExp(source);
+  const flags = new Set(m ? m[1]!.split('') : []);
+  if (ignoreCase) flags.add('i');
+  return new RegExp(m ? source.slice(m[0].length) : source, [...flags].join(''));
 }

@@ -2,7 +2,8 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { compilePattern, runSearch, splitGlob } from '../src/search.js';
+import { runSearch, splitGlob } from '../src/search.js';
+import { compilePattern } from '../src/text.js';
 
 let dir: string;
 

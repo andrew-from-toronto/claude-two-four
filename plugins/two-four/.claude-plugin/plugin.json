@@ -1,0 +1,9 @@
+{
+  "name": "two-four",
+  "description": "Batch file edits, multi-pattern search, shell commands with saved output and a digest, and GitHub Actions results, in one MCP server",
+  "version": "0.3.0",
+  "author": {
+    "name": "andrew-from-toronto"
+  },
+  "repository": "https://github.com/andrew-from-toronto/claude-two-four"
+}

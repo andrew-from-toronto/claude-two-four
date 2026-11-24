@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import picomatch from 'picomatch';
+import { compilePattern } from './text.js';
 
 const execFileP = promisify(execFile);
 
@@ -34,14 +35,6 @@ const NOCASE = process.platform === 'win32';
 
 const toSlash = (p: string) => p.replace(/\\/g, '/');
 const clip = (s: string) => (s.length > MAX_LINE ? `${s.slice(0, MAX_LINE)}...` : s);
-
-/** Accepts a leading PCRE-style (?i), (?m) or (?s) group, which JavaScript regex rejects, as flags. */
-export function compilePattern(source: string, ignoreCase: boolean): RegExp {
-  const m = /^\(\?([ims]+)\)/.exec(source);
-  const flags = new Set(m ? m[1]!.split('') : []);
-  if (ignoreCase) flags.add('i');
-  return new RegExp(m ? source.slice(m[0].length) : source, [...flags].join(''));
-}
 
 /** Splits a glob into the deepest literal directory and the absolute pattern. */
 export function splitGlob(pattern: string, baseDir: string): { root: string; glob: string } {

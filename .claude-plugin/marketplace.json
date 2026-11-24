@@ -6,14 +6,9 @@
   },
   "plugins": [
     {
-      "name": "batch-edit",
-      "source": "./plugins/batch-edit",
-      "description": "Create and edit many files in one all-or-nothing call, and search many files for several patterns in one call"
-    },
-    {
-      "name": "shell",
-      "source": "./plugins/shell",
-      "description": "Run commands with full output saved to a file and a filtered digest returned; read GitHub Actions results"
+      "name": "two-four",
+      "source": "./plugins/two-four",
+      "description": "Batch file edits, multi-pattern search, shell commands with saved output and a digest, and GitHub Actions results, in one MCP server"
     }
   ]
 }
