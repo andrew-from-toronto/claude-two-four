@@ -287,8 +287,8 @@ var require_utils2 = __commonJS({
       }
       return output;
     };
-    exports.basename = (path5, { windows } = {}) => {
-      const segs = path5.split(windows ? /[\\/]/ : "/");
+    exports.basename = (path6, { windows } = {}) => {
+      const segs = path6.split(windows ? /[\\/]/ : "/");
       const last = segs[segs.length - 1];
       if (last === "") {
         return segs[segs.length - 2];
@@ -2102,10 +2102,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path5) {
-  if (!path5)
+function getElementAtPath(obj, path6) {
+  if (!path6)
     return obj;
-  return path5.reduce((acc, key) => acc?.[key], obj);
+  return path6.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -2445,11 +2445,11 @@ function explicitlyAborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path5, issues) {
+function prefixIssues(path6, issues) {
   return issues.map((iss) => {
     var _a3;
     (_a3 = iss).path ?? (_a3.path = []);
-    iss.path.unshift(path5);
+    iss.path.unshift(path6);
     return iss;
   });
 }
@@ -2910,16 +2910,16 @@ function flattenError(error2, mapper = (issue2) => issue2.message) {
 }
 function formatError(error2, mapper = (issue2) => issue2.message) {
   const fieldErrors = { _errors: [] };
-  const processError = (error3, path5 = []) => {
+  const processError = (error3, path6 = []) => {
     for (const issue2 of error3.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path5, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path6, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path5, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path6, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path5, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path6, ...issue2.path]);
       } else {
-        const fullpath = [...path5, ...issue2.path];
+        const fullpath = [...path6, ...issue2.path];
         if (fullpath.length === 0) {
           fieldErrors._errors.push(mapper(issue2));
         } else {
@@ -12283,9 +12283,9 @@ var rev2026Codec = {
     });
     const parsed = buildSchemas2026().RequestMetaEnvelopeSchema.safeParse(meta2);
     if (!parsed.success) for (const issue2 of parsed.error.issues) {
-      const path5 = issue2.path.map(String);
-      const key = path5.length > 0 ? path5.join(".") : "_meta";
-      if (path5.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
+      const path6 = issue2.path.map(String);
+      const key = path6.length > 0 ? path6.join(".") : "_meta";
+      if (path6.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
       issues.push({
         key,
         problem: issue2.message
@@ -12612,17 +12612,17 @@ function scanXMcpHeaderDeclarations(inputSchema) {
   const declarations = [];
   const seenLower = /* @__PURE__ */ new Map();
   let numberFault;
-  const visit = (node2, path5, reachable) => {
+  const visit = (node2, path6, reachable) => {
     if (node2 === null || typeof node2 !== "object") return void 0;
     const schema = node2;
     if (X_MCP_HEADER_KEY in schema) {
-      if (!reachable || path5.length === 0) return `${pathName(path5)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
+      if (!reachable || path6.length === 0) return `${pathName(path6)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
       const raw = schema[X_MCP_HEADER_KEY];
-      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path5)}: x-mcp-header MUST be a non-empty string`;
-      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path5)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
+      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path6)}: x-mcp-header MUST be a non-empty string`;
+      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path6)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
       const type = typeof schema.type === "string" ? schema.type : void 0;
       if (type === void 0 || !PERMITTED_X_MCP_HEADER_TYPES.has(type)) {
-        const fault$1 = `${pathName(path5)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
+        const fault$1 = `${pathName(path6)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
         if (type !== "number") return fault$1;
         numberFault ??= fault$1;
       }
@@ -12631,14 +12631,14 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (prior !== void 0) return `x-mcp-header '${raw}' is not case-insensitively unique (also declared as '${prior}')`;
       seenLower.set(lower, raw);
       declarations.push({
-        path: path5,
+        path: path6,
         headerName: raw,
         type
       });
     }
     const properties = schema.properties;
     if (properties !== null && typeof properties === "object") for (const [key, child] of Object.entries(properties)) {
-      const fault$1 = visit(child, [...path5, key], reachable);
+      const fault$1 = visit(child, [...path6, key], reachable);
       if (fault$1 !== void 0) return fault$1;
     }
     for (const k of NON_REACHABLE_SUBSCHEMA_KEYWORDS) {
@@ -12646,7 +12646,7 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (sub === void 0) continue;
       const branches = Array.isArray(sub) ? sub : sub !== null && typeof sub === "object" && OBJECT_VALUED_SUBSCHEMA_KEYWORDS.has(k) ? Object.values(sub) : [sub];
       for (const branch of branches) {
-        const fault$1 = visit(branch, [...path5, `<${k}>`], false);
+        const fault$1 = visit(branch, [...path6, `<${k}>`], false);
         if (fault$1 !== void 0) return fault$1;
       }
     }
@@ -12691,8 +12691,8 @@ var OBJECT_VALUED_SUBSCHEMA_KEYWORDS = /* @__PURE__ */ new Set([
   "$defs",
   "definitions"
 ]);
-function pathName(path5) {
-  return path5.length === 0 ? "<root>" : path5.join(".");
+function pathName(path6) {
+  return path6.length === 0 ? "<root>" : path6.join(".");
 }
 var HEADER_MISMATCH_ERROR_CODE = -32020;
 var INBOUND_VALIDATION_LADDER = [
@@ -12984,7 +12984,7 @@ var PROPERTY_KEYS_BY_TYPE = {
   array: shapeKeys([UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema])
 };
 var SUPPORTED_STRING_FORMATS = new Set(StringSchemaSchema.shape.format.unwrap().options);
-function walkProperty(node2, path5, vendor, unsupported) {
+function walkProperty(node2, path6, vendor, unsupported) {
   if (!isJsonObject(node2)) return node2;
   const allowedKeys = typeof node2.type === "string" && Object.hasOwn(PROPERTY_KEYS_BY_TYPE, node2.type) ? PROPERTY_KEYS_BY_TYPE[node2.type] : void 0;
   if (allowedKeys === void 0) return node2;
@@ -12992,8 +12992,8 @@ function walkProperty(node2, path5, vendor, unsupported) {
   for (const [key, value] of Object.entries(node2)) if (allowedKeys.has(key) || isAnnotationOnlyJsonSchemaKeyword(key)) pruned[key] = value;
   else if (key === "pattern" && node2.type === "string" && typeof node2.format === "string") {
     if (!SUPPORTED_STRING_FORMATS.has(node2.format)) pruned[key] = value;
-    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path5}.${key}`);
-  } else unsupported.push(`${path5}.${key}`);
+    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path6}.${key}`);
+  } else unsupported.push(`${path6}.${key}`);
   return pruned;
 }
 function walkRequestedSchema(converted, vendor) {
@@ -13010,11 +13010,11 @@ function describeUnsupportedProperties(pruned, fallback) {
   const offenders = Object.entries(pruned.properties).filter(([, node2]) => !parseSchema(PrimitiveSchemaDefinitionSchema, node2).success).map(([name]) => `properties.${name}`);
   return offenders.length > 0 ? offenders.join(", ") : fallback;
 }
-function findDroppedConstraintPaths(original, parsed, path5 = "") {
-  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path5}[${index}]`));
+function findDroppedConstraintPaths(original, parsed, path6 = "") {
+  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path6}[${index}]`));
   if (!isJsonObject(original) || !isJsonObject(parsed)) return [];
   return Object.entries(original).flatMap(([key, value]) => {
-    const childPath = path5 ? `${path5}.${key}` : key;
+    const childPath = path6 ? `${path6}.${key}` : key;
     if (!Object.prototype.hasOwnProperty.call(parsed, key)) return isAnnotationOnlyJsonSchemaKeyword(key) ? [] : [childPath];
     return findDroppedConstraintPaths(value, parsed[key], childPath);
   });
@@ -17155,8 +17155,8 @@ var require_utils = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     for (let i = 0; i < str.length; i++) if (str[i] === token) ind++;
     return ind;
   }
-  function removeDotSegments(path5) {
-    let input = path5;
+  function removeDotSegments(path6) {
+    let input = path6;
     const output = [];
     let nextSlash = -1;
     let len = 0;
@@ -17494,8 +17494,8 @@ var require_schemes = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     }
     if (wsComponent.resourceName) {
       const queryIndex = wsComponent.resourceName.indexOf("?");
-      const path5 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
-      wsComponent.path = path5 && path5 !== "/" ? path5 : void 0;
+      const path6 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
+      wsComponent.path = path6 && path6 !== "/" ? path6 : void 0;
       wsComponent.query = queryIndex === -1 ? void 0 : wsComponent.resourceName.slice(queryIndex + 1);
       wsComponent.resourceName = void 0;
     }
@@ -21598,11 +21598,11 @@ var require_dist = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     if (!f) throw new Error(`Unknown format "${name}"`);
     return f;
   };
-  function addFormats2(ajv, list, fs5, exportName) {
+  function addFormats2(ajv, list, fs6, exportName) {
     var _a3;
     var _b;
     (_a3 = (_b = ajv.opts.code).formats) !== null && _a3 !== void 0 || (_b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`);
-    for (const f of list) ajv.addFormat(f, fs5[f]);
+    for (const f of list) ajv.addFormat(f, fs6[f]);
   }
   module.exports = exports = formatsPlugin;
   Object.defineProperty(exports, "__esModule", { value: true });
@@ -24900,6 +24900,86 @@ ${bad.join("\n")}` };
   return { ok: true, text: out.join("\n") };
 }
 
+// src/usage.ts
+import { promises as fs5 } from "node:fs";
+import os3 from "node:os";
+import path5 from "node:path";
+var USAGE_URL = "https://api.anthropic.com/api/oauth/usage";
+async function readUsage() {
+  let token;
+  try {
+    token = await readToken();
+  } catch (e) {
+    return { ok: false, text: `Could not read the Claude login token: ${e.message}` };
+  }
+  let res;
+  try {
+    res = await fetch(USAGE_URL, {
+      headers: { Authorization: `Bearer ${token}`, "anthropic-beta": "oauth-2025-04-20" },
+      signal: AbortSignal.timeout(15e3)
+    });
+  } catch (e) {
+    return { ok: false, text: `Usage request failed: ${e.message}` };
+  }
+  const body = await res.text();
+  if (res.status === 401) return { ok: false, text: "Usage request returned 401: the login token has expired. Claude Code refreshes it on its next request; try again shortly." };
+  if (!res.ok) return { ok: false, text: `Usage request returned ${res.status}: ${body.slice(0, 500)}` };
+  return { ok: true, text: formatUsage(JSON.parse(body), /* @__PURE__ */ new Date()) };
+}
+async function readToken() {
+  const dir = process.env.CLAUDE_CONFIG_DIR ?? path5.join(os3.homedir(), ".claude");
+  const file = path5.join(dir, ".credentials.json");
+  const creds = JSON.parse(await fs5.readFile(file, "utf8"));
+  const token = creds.claudeAiOauth?.accessToken;
+  if (!token) throw new Error(`no claudeAiOauth.accessToken in ${file}`);
+  return token;
+}
+function formatUsage(u, now, timeZone) {
+  const lines = [];
+  if (u.limits?.length) {
+    for (const l of u.limits) lines.push(limitLine(limitLabel(l), l.percent, l.severity, l.resets_at, now, timeZone));
+  } else {
+    if (u.five_hour?.utilization != null) lines.push(limitLine("Session (5h)", u.five_hour.utilization, null, u.five_hour.resets_at, now, timeZone));
+    if (u.seven_day?.utilization != null) lines.push(limitLine("Weekly (all models)", u.seven_day.utilization, null, u.seven_day.resets_at, now, timeZone));
+  }
+  const s = u.spend;
+  if (s?.enabled && s.used && s.limit) lines.push(`Extra usage: ${money(s.used)} of ${money(s.limit)} ${s.limit.currency} (${s.percent ?? 0}%)`);
+  return lines.length ? lines.join("\n") : "No usage limits reported for this account.";
+}
+function limitLabel(l) {
+  const model = l.scope?.model?.display_name;
+  switch (l.kind) {
+    case "session":
+      return "Session (5h)";
+    case "weekly_all":
+      return "Weekly (all models)";
+    case "weekly_scoped":
+      return `Weekly (${model ?? l.scope?.surface ?? "scoped"})`;
+    default:
+      return model ? `${l.kind} (${model})` : l.kind;
+  }
+}
+function limitLine(label2, percent, severity, resetsAt, now, timeZone) {
+  let line = `${label2}: ${Math.round(percent)}%`;
+  if (severity && severity !== "normal") line += ` [${severity}]`;
+  if (resetsAt) {
+    const at = new Date(resetsAt);
+    const when = at.toLocaleString("en-US", { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+    line += `, resets ${when} (in ${duration3(at.getTime() - now.getTime())})`;
+  }
+  return line;
+}
+function duration3(ms) {
+  const mins = Math.max(0, Math.round(ms / 6e4));
+  const d = Math.floor(mins / 1440);
+  const h = Math.floor(mins % 1440 / 60);
+  const m = mins % 60;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+}
+function money(v) {
+  return (v.amount_minor / 10 ** v.exponent).toFixed(v.exponent);
+}
+
 // src/server.ts
 var EDIT_DESCRIPTION = `Create and edit files, across any number of files, in one call.
 
@@ -24966,9 +25046,10 @@ var ciSpec = object({
   max_matches: number2().int().min(1).max(1e3).optional().describe("grep: matches shown per job (default 50)"),
   jobs: string2().optional().describe("Regex on job name selecting which jobs to read (default: failed jobs)")
 });
+var USAGE_DESCRIPTION = `Show this Claude account's plan usage: session (5-hour) and weekly limit percentages with reset times, plus extra-usage spend. Same data as Claude Code's /usage, read with the CLI's own login.`;
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var handle = serveStdio(() => {
-  const server = new McpServer({ name: "two-four", version: "0.3.0" });
+  const server = new McpServer({ name: "two-four", version: "0.4.0" });
   server.registerTool(
     "edit",
     {
@@ -24996,6 +25077,10 @@ var handle = serveStdio(() => {
   });
   server.registerTool("ci", { description: CI_DESCRIPTION, inputSchema: ciSpec }, async (spec) => {
     const result = await readCi(spec, baseDir);
+    return { content: [{ type: "text", text: result.text }], isError: !result.ok };
+  });
+  server.registerTool("usage", { description: USAGE_DESCRIPTION, inputSchema: object({}) }, async () => {
+    const result = await readUsage();
     return { content: [{ type: "text", text: result.text }], isError: !result.ok };
   });
   return server;

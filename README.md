@@ -1,6 +1,6 @@
 # claude-two-four
 
-A Claude Code plugin with one MCP server for batch file edits, multi-pattern search, shell commands and GitHub Actions results.
+A Claude Code plugin with one MCP server for batch file edits, multi-pattern search, shell commands, GitHub Actions results and Claude plan usage.
 
 ## Install
 
@@ -49,6 +49,13 @@ A `search` tool that runs several regex patterns over many files in one call.
 - Job logs are fetched per job and in parallel, then sliced to the failed step.
 - `grep` searches the job logs instead (with context lines), and `jobs` picks which jobs by name, passing ones included.
 - Completed jobs' logs are cached in the temp folder and their paths returned, so repeat searches skip the download and the files can be searched directly.
+
+### usage
+
+`usage` shows the account's plan usage, the same data as `/usage`.
+
+- Session (5-hour) and weekly limit percentages with reset times, and extra-usage spend.
+- Reads Claude Code's login token from `~/.claude/.credentials.json` (or `$CLAUDE_CONFIG_DIR`) and calls the undocumented `api.anthropic.com/api/oauth/usage` endpoint, so it may break if that endpoint changes.
 
 ## Develop
 

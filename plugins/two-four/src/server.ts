@@ -5,6 +5,7 @@ import { readCi } from './ci.js';
 import { formatResult, runBatch } from './edit.js';
 import { runCommand } from './run.js';
 import { runSearch } from './search.js';
+import { readUsage } from './usage.js';
 
 const EDIT_DESCRIPTION = `Create and edit files, across any number of files, in one call.
 
@@ -79,10 +80,12 @@ const ciSpec = z.object({
   jobs: z.string().optional().describe('Regex on job name selecting which jobs to read (default: failed jobs)'),
 });
 
+const USAGE_DESCRIPTION = `Show this Claude account's plan usage: session (5-hour) and weekly limit percentages with reset times, plus extra-usage spend. Same data as Claude Code's /usage, read with the CLI's own login.`;
+
 const baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
 const handle = serveStdio(() => {
-  const server = new McpServer({ name: 'two-four', version: '0.3.0' });
+  const server = new McpServer({ name: 'two-four', version: '0.4.0' });
   server.registerTool(
     'edit',
     {
@@ -112,6 +115,10 @@ const handle = serveStdio(() => {
   });
   server.registerTool('ci', { description: CI_DESCRIPTION, inputSchema: ciSpec }, async (spec) => {
     const result = await readCi(spec, baseDir);
+    return { content: [{ type: 'text', text: result.text }], isError: !result.ok };
+  });
+  server.registerTool('usage', { description: USAGE_DESCRIPTION, inputSchema: z.object({}) }, async () => {
+    const result = await readUsage();
     return { content: [{ type: 'text', text: result.text }], isError: !result.ok };
   });
   return server;
