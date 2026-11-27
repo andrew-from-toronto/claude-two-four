@@ -25,6 +25,8 @@ Install the [Codex CLI](https://developers.openai.com/codex/cli), make `codex` a
 
 In Claude Code, type `@` and select `codex-agents:codex`, then give it a task. The background subagent appears in the terminal's subagent panel and in `/tasks`. Open its transcript and use **Steer Codex** to send instructions directly to the running Codex turn. Click the field or press `Ctrl+X`, then `Tab` to focus it. Use the regular transcript prompt for follow-ups after a turn completes.
 
+The terminal view shows Codex's live replies, recent command output, and file activity. The Claude relay waits once per turn and reports Codex's final result to the parent. The stream display uses Claude Code mods and is scoped to the selected worker.
+
 Run `/codex-usage` to see your current Codex allowance and reset times alongside token totals for each worker in this Claude session. Claude Code `2.1.332` was tested with the transcript control and slash command. Both require Claude Code mods to be enabled.
 
 The parent can also call the MCP tools directly.
@@ -33,7 +35,8 @@ The parent can also call the MCP tools directly.
 | --- | --- |
 | `codex_spawn` | Starts a background Codex subagent with its own conversation. Pass a prompt and optionally a name, working directory, model, or sandbox. |
 | `codex_send` | Steers an active turn or sends a follow-up in the same conversation after the turn ends. |
-| `codex_wait` | Reads commentary and answers as they become available. Start at cursor `0` and reuse `next_cursor` on later reads. Use `timeout_seconds: 0` to check immediately. |
+| `codex_wait` | Reads commentary and answers as they become available, or waits for the final result with `until_complete: true`. Start at cursor `0` and reuse `next_cursor` on later reads. Use `timeout_seconds: 0` to check immediately. |
+| `codex_stream` | Reads a snapshot of the current turn's text and activity for the live view. |
 | `codex_list` | Shows subagents and their current status. |
 | `codex_stop` | Interrupts the active turn. Send a follow-up once it has stopped to continue the conversation. |
 | `codex_usage` | Shows the same allowance and worker token totals as `/codex-usage`. |

@@ -3,6 +3,7 @@ import path from 'node:path';
 import * as z from 'zod/v4';
 import { CodexAppServer, type CodexConnection, type ConnectCodex } from './codex-app-server.js';
 import { accountLimits, formatUsage, threadUsage, type WorkerUsage } from './codex-usage.js';
+import { CodexStream, streamEvent } from './codex-stream.js';
 
 const threadResponse = z.object({ thread: z.object({ id: z.string() }), model: z.string() });
 const turn = z.object({
@@ -12,15 +13,10 @@ const turn = z.object({
 });
 const turnResponse = z.object({ turn });
 const turnEvent = turnResponse.extend({ threadId: z.string() });
-const itemEvent = z.object({
-  threadId: z.string(),
-  turnId: z.string(),
-  item: z.object({ type: z.literal('agentMessage'), id: z.string(), text: z.string(), phase: z.string().nullish() }),
-});
 
 type Status = 'running' | 'stopping' | 'completed' | 'interrupted' | 'failed';
 type Message = { turn: number; phase: string | null; text: string };
-type AgentTurn = { number: number; id?: string; status: Status; error?: string; seenItems: Set<string> };
+type AgentTurn = { number: number; id?: string; status: Status; error?: string; seenItems: Set<string>; stream: CodexStream; waiters: Set<() => void> };
 type Agent = {
   id: string;
   name?: string;
@@ -45,23 +41,28 @@ export interface SpawnCodexSpec {
 
 const active = (turn: AgentTurn) => turn.status === 'running' || turn.status === 'stopping';
 const input = (text: string) => [{ type: 'text', text }];
-const newTurn = (number: number): AgentTurn => ({ number, status: 'running', seenItems: new Set() });
+const newTurn = (number: number): AgentTurn => ({ number, status: 'running', seenItems: new Set(), stream: new CodexStream(), waiters: new Set() });
 
-function describe(agent: Agent) {
+function describe(agent: Agent, current = agent.turn) {
   return {
     agent_id: agent.id,
     name: agent.name,
     cwd: agent.cwd,
     model: agent.model,
     sandbox: agent.sandbox,
-    turn: agent.turn.number,
-    status: agent.connectionError ? 'failed' : agent.turn.status,
-    error: agent.connectionError ?? agent.turn.error,
+    turn: current.number,
+    status: agent.connectionError ? 'failed' : current.status,
+    error: agent.connectionError ?? current.error,
   };
 }
 
 function wake(agent: Agent): void {
   for (const waiter of agent.waiters) waiter();
+}
+
+function finishTurn(agent: Agent, turn: AgentTurn): void {
+  for (const waiter of turn.waiters) waiter();
+  wake(agent);
 }
 
 export class CodexAgents {
@@ -143,7 +144,12 @@ export class CodexAgents {
   }
 
   list() {
-    return Array.from(this.agents.values(), describe);
+    return Array.from(this.agents.values(), (agent) => describe(agent));
+  }
+
+  stream(id: string) {
+    const agent = this.getAgent(id);
+    return { ...describe(agent), ...agent.turn.stream.snapshot() };
   }
 
   async usage(): Promise<string> {
@@ -156,28 +162,30 @@ export class CodexAgents {
     return formatUsage(account, Array.from(this.agents.values(), ({ id, name, usage }) => ({ id, name, usage })));
   }
 
-  async wait(id: string, cursor: number, timeoutMs: number, options: { signal?: AbortSignal; interruptOnCancel?: boolean } = {}) {
+  async wait(id: string, cursor: number, timeoutMs: number | undefined, options: { signal?: AbortSignal; interruptOnCancel?: boolean; untilComplete?: boolean } = {}) {
     const agent = this.getAgent(id);
     const current = agent.turn;
-    const { signal, interruptOnCancel } = options;
+    const { signal, interruptOnCancel, untilComplete } = options;
     if (cursor > agent.messages.length) throw new Error('cursor is ahead of this agent’s messages');
-    if (cursor === agent.messages.length && active(current) && !agent.connectionError && timeoutMs > 0 && !signal?.aborted) {
+    if ((untilComplete || cursor === agent.messages.length) && active(current) && !agent.connectionError && timeoutMs !== 0 && !signal?.aborted) {
+      const waiters = untilComplete ? current.waiters : agent.waiters;
       await new Promise<void>((resolve) => {
         const finish = () => {
           clearTimeout(timer);
-          agent.waiters.delete(finish);
+          waiters.delete(finish);
           signal?.removeEventListener('abort', finish);
           resolve();
         };
-        const timer = setTimeout(finish, timeoutMs);
-        agent.waiters.add(finish);
+        const timer = timeoutMs === undefined ? undefined : setTimeout(finish, timeoutMs);
+        waiters.add(finish);
         signal?.addEventListener('abort', finish, { once: true });
       });
     }
     if (signal?.aborted && interruptOnCancel && current === agent.turn) await this.stop(id);
-    const messages = agent.messages.slice(cursor, cursor + 20);
+    const messages = agent.messages.slice(cursor, cursor + 20).filter((message) => !untilComplete || message.turn <= current.number);
     const next_cursor = cursor + messages.length;
-    return { ...describe(agent), messages, next_cursor, has_more: next_cursor < agent.messages.length };
+    const next = agent.messages[next_cursor];
+    return { ...describe(agent, untilComplete ? current : agent.turn), messages, next_cursor, has_more: !!next && (!untilComplete || next.turn <= current.number) };
   }
 
   close(): void {
@@ -201,7 +209,7 @@ export class CodexAgents {
         for (const agent of this.agents.values()) {
           if (agent.connection !== connection) continue;
           agent.connectionError = error.message;
-          wake(agent);
+          finishTurn(agent, agent.turn);
         }
       },
     });
@@ -217,7 +225,7 @@ export class CodexAgents {
     } catch (error) {
       current.status = 'failed';
       current.error = error instanceof Error ? error.message : String(error);
-      wake(agent);
+      finishTurn(agent, current);
       throw error;
     }
   }
@@ -228,10 +236,24 @@ export class CodexAgents {
     if (update.status === 'inProgress') return;
     current.status = update.status;
     current.error = update.error?.message;
-    wake(agent);
+    finishTurn(agent, current);
   }
 
   private onNotification(connection: CodexConnection, method: string, params: unknown): void {
+    const streamed = streamEvent(method, params);
+    if (streamed) {
+      const agent = this.agents.get(streamed.threadId);
+      if (agent?.connection !== connection || !active(agent.turn) || agent.turn.id !== streamed.turnId) return;
+      agent.turn.stream.update(streamed);
+      if (method === 'item/completed' && 'item' in streamed && streamed.item.type === 'agentMessage') {
+        const { item } = streamed;
+        if (agent.turn.seenItems.has(item.id)) return;
+        agent.turn.seenItems.add(item.id);
+        agent.messages.push({ turn: agent.turn.number, phase: item.phase ?? null, text: item.text });
+        wake(agent);
+      }
+      return;
+    }
     if (method === 'thread/tokenUsage/updated') {
       const event = threadUsage.safeParse(params);
       if (!event.success) return;
@@ -243,16 +265,6 @@ export class CodexAgents {
       if (!event.success) return;
       const agent = this.agents.get(event.data.threadId);
       if (agent?.connection === connection) this.updateTurn(agent, agent.turn, event.data.turn);
-    }
-    if (method === 'item/completed') {
-      const event = itemEvent.safeParse(params);
-      if (!event.success) return;
-      const { threadId, turnId, item } = event.data;
-      const agent = this.agents.get(threadId);
-      if (agent?.connection !== connection || !active(agent.turn) || agent.turn.id !== turnId || agent.turn.seenItems.has(item.id)) return;
-      agent.turn.seenItems.add(item.id);
-      agent.messages.push({ turn: agent.turn.number, phase: item.phase ?? null, text: item.text });
-      wake(agent);
     }
   }
 }

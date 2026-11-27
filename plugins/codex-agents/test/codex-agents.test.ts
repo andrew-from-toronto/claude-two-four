@@ -36,6 +36,9 @@ function setup() {
         totalTokens, inputTokens: totalTokens - 100, cachedInputTokens: 20, outputTokens: 100,
       } } });
     },
+    item(threadId: string, method: string, data: object) {
+      events.notification(`item/${method}`, { threadId, turnId: turns.get(threadId), ...data });
+    },
   };
 }
 
@@ -103,6 +106,35 @@ it('leaves a completed turn for the relay to resume when asked to steer only', a
   expect(request.mock.calls.filter(([method]) => method === 'turn/start')).toHaveLength(1);
 });
 
+it('streams partial text and activity while a single final wait is pending', async () => {
+  const { agents, post, complete, item } = setup();
+  const worker = await agents.spawn({ prompt: 'Review' });
+  const peer = await agents.spawn({ prompt: 'Other work' });
+  const id = worker.agent_id;
+  let resolved = false;
+  const result = agents.wait(id, 0, undefined, { untilComplete: true }).then((output) => { resolved = true; return output; });
+  item(id, 'agentMessage/delta', { itemId: 'message-1', delta: 'Looking' });
+  item(id, 'agentMessage/delta', { itemId: 'message-1', delta: ' closely' });
+  item(id, 'started', { item: { type: 'commandExecution', id: 'cmd', command: 'git status', status: 'inProgress' } });
+  item(id, 'commandExecution/outputDelta', { itemId: 'cmd', delta: '\u001b[31mchanged\u001b[0m' });
+  item(id, 'completed', { item: { type: 'commandExecution', id: 'cmd', command: 'git status', status: 'completed', exitCode: 0 } });
+  item(id, 'completed', { item: { type: 'fileChange', id: 'file', status: 'completed', changes: [{ path: 'demo.ts' }] } });
+  expect(agents.stream(id).rows).toEqual([
+    { kind: 'agentMessage', text: 'Looking closely' },
+    { kind: 'commandExecution', title: 'git status', text: 'changed', status: 'exit 0' },
+    { kind: 'fileChange', text: 'demo.ts', status: 'completed' },
+  ]);
+  expect(agents.stream(peer.agent_id).rows).toEqual([]);
+  post(id, 'Looked closely', 'commentary', 'message-1');
+  await Promise.resolve();
+  expect(resolved).toBe(false);
+  expect(agents.stream(id).rows[0]?.text).toBe('Looked closely');
+  complete(id);
+  expect(await result).toMatchObject({ status: 'completed', messages: [{ text: 'Looked closely' }], next_cursor: 1 });
+  await agents.send(id, 'Follow up');
+  expect(agents.stream(id)).toMatchObject({ turn: 2, rows: [] });
+});
+
 it('combines current account allowance with the latest per-worker token totals', async () => {
   const { agents, request, usage } = setup();
   const worker = await agents.spawn({ prompt: 'Review', name: 'Review' });
@@ -146,7 +178,7 @@ it('interrupts on cancellation only for a wait that opts in', async () => {
   expect(request).not.toHaveBeenCalledWith('turn/interrupt', expect.anything());
 
   const relay = new AbortController();
-  const relayWait = agents.wait(worker.agent_id, 0, 30_000, { signal: relay.signal, interruptOnCancel: true });
+  const relayWait = agents.wait(worker.agent_id, 0, undefined, { signal: relay.signal, interruptOnCancel: true, untilComplete: true });
   relay.abort();
   expect(await relayWait).toMatchObject({ status: 'stopping' });
   expect(request).toHaveBeenCalledWith('turn/interrupt', { threadId: worker.agent_id, turnId: expect.any(String) });

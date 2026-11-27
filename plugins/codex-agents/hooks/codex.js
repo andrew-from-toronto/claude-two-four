@@ -1,5 +1,37 @@
+async function followCodex($, worker, feed) {
+  try {
+    const connection = await $.mcp.connect('codex-agents');
+    if (!connection.isConnected) return;
+    do {
+      const result = await $.mcp.call(connection.server, 'codex_stream', { agent_id: worker.id });
+      if (result.isError) return;
+      const text = result.content.find((block) => block.type === 'text')?.text;
+      if (!text) return;
+      const stream = JSON.parse(text);
+      if (feed.turn !== undefined && stream.turn !== feed.turn) return;
+      if (feed.revision !== stream.revision || feed.status !== stream.status) {
+        Object.assign(feed, stream);
+        $.ui.invalidate('ui.render');
+      }
+      if (!feed.running || (stream.status !== 'running' && stream.status !== 'stopping')) return;
+      await $.clock.sleep(350);
+    } while (worker.feed === feed);
+  } catch {
+    // The relay's wait still delivers the final result if the live view is unavailable.
+  }
+}
+
+function streamText(feed) {
+  return feed.rows.map((row) => {
+    if (row.kind === 'agentMessage') return row.text;
+    const title = row.kind === 'commandExecution' ? `$ ${row.title ?? 'Command'}` : 'Files changed';
+    return `${title} · ${row.status ?? 'running'}${row.text ? `\n${row.text}` : ''}`;
+  }).join('\n\n');
+}
+
 export function register(on) {
   const workers = new Map();
+  const feeds = new Map();
 
   on('session.start', async ($, event, next) => {
     try {
@@ -11,7 +43,9 @@ export function register(on) {
   });
 
   on('session.end', ($, event, next) => {
+    for (const worker of workers.values()) if (worker.feed) worker.feed.running = false;
     workers.clear();
+    feeds.clear();
     return next(event);
   });
 
@@ -45,11 +79,45 @@ export function register(on) {
     return result;
   }).catch(($, event, next) => next(event));
 
+  on('tool.run', { tool: 'mcp__plugin_codex-agents_codex-agents__codex_wait' }, async ($, event, next) => {
+    const worker = workers.get(event.agentId);
+    if (!worker || event.agent_id !== worker.id || !event.until_complete || event.timeout_seconds === 0) return next(event);
+    const feed = { running: true, rows: [] };
+    worker.feed = feed;
+    feeds.set(event.tool_use_id, feed);
+    const result = next(event);
+    void followCodex($, worker, feed);
+    try {
+      return await result;
+    } finally {
+      feed.running = false;
+      $.ui.invalidate('ui.render');
+    }
+  }).catch(($, event, next) => next(event));
+
+  on('ui.render', { component: 'ToolUse' }, async ($, event, next) => {
+    const feed = feeds.get(event.requestId);
+    if (event.surface !== 'terminal' || !feed?.rows.length) return next(event);
+    const { Text } = await $.ui.resolve(event);
+    feed.inline = true;
+    return Text({ children: [streamText(feed)] });
+  });
+
+  on('ui.render', { component: 'ToolGroup' }, async ($, event, next) => {
+    if (event.surface !== 'terminal' || event.props.isExpanded || !event.props.isCallsOnly) return next(event);
+    const group = event.props.calls.map((call) => feeds.get(call.tool_use_id)).filter((feed) => feed?.rows.length);
+    if (!group.length) return next(event);
+    if (event.props.calls.some((call) => !call.tool.startsWith('mcp__plugin_codex-agents_codex-agents__'))) return next(event);
+    const { Text } = await $.ui.resolve(event);
+    for (const feed of group) feed.inline = true;
+    return Text({ children: [group.map(streamText).join('\n\n')] });
+  });
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, event, next) => {
     const worker = workers.get(event.props.view?.agentId);
     if (event.surface !== 'terminal' || event.props.hasSurvey || !worker) return next(event);
-    const { Input } = await $.ui.resolve(event);
-    return Input({
+    const { Box, Input, Text } = await $.ui.resolve(event);
+    const input = Input({
       key: `codex-steer-${worker.submission}`,
       label: 'Steer Codex',
       placeholder: 'Send a message to the running turn',
@@ -73,5 +141,8 @@ export function register(on) {
         }
       },
     });
+    if (!worker.feed?.running || worker.feed.inline || !worker.feed.rows.length) return input;
+    const preview = streamText(worker.feed).split('\n').filter(Boolean).slice(-2).join('\n').slice(-240);
+    return Box({ flexDirection: 'column', children: [Text({ children: [preview] }), input] });
   });
 }

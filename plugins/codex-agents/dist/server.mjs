@@ -2396,9 +2396,9 @@ var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
     const proms = [];
     const abortEarly = ctx?.abortEarly;
     for (let i = 0; i < input2.length; i++) {
-      const item = input2[i];
+      const item2 = input2[i];
       const result = def.element._zod.run({
-        value: item,
+        value: item2,
         issues: []
       }, ctx);
       if (result instanceof Promise) {
@@ -4967,8 +4967,8 @@ function isTransforming(_schema, _ctx) {
     return false;
   }
   if (def.type === "tuple") {
-    for (const item of def.items) {
-      if (isTransforming(item, ctx))
+    for (const item2 of def.items) {
+      if (isTransforming(item2, ctx))
         return true;
     }
     if (def.rest && isTransforming(def.rest, ctx))
@@ -5411,8 +5411,8 @@ var tupleProcessor = (schema, ctx, _json, params) => {
   }) : null;
   let minItems = def.items.length;
   while (minItems > 0) {
-    const item = def.items[minItems - 1];
-    const optional2 = ctx.io === "input" ? inputOptin(item) !== void 0 : item._zod.optout === "optional";
+    const item2 = def.items[minItems - 1];
+    const optional2 = ctx.io === "input" ? inputOptin(item2) !== void 0 : item2._zod.optout === "optional";
     if (!optional2)
       break;
     minItems--;
@@ -8977,7 +8977,7 @@ function wrapOutputSchemaForLegacy(natural) {
   };
   const convertRecursiveRefs = declares2019Dialect(natural["$schema"]) && natural["$recursiveAnchor"] !== true;
   const rewriteRefs = (node2, parentIsNameMap) => {
-    if (Array.isArray(node2)) return node2.map((item) => rewriteRefs(item, false));
+    if (Array.isArray(node2)) return node2.map((item2) => rewriteRefs(item2, false));
     if (node2 === null || typeof node2 !== "object") return node2;
     if (!parentIsNameMap && establishesNewBase(node2["$id"])) return node2;
     const out = {};
@@ -11208,7 +11208,7 @@ function describeUnsupportedProperties(pruned, fallback) {
   return offenders.length > 0 ? offenders.join(", ") : fallback;
 }
 function findDroppedConstraintPaths(original, parsed, path3 = "") {
-  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path3}[${index}]`));
+  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item2, index) => findDroppedConstraintPaths(item2, parsed[index], `${path3}[${index}]`));
   if (!isJsonObject(original) || !isJsonObject(parsed)) return [];
   return Object.entries(original).flatMap(([key, value]) => {
     const childPath = path3 ? `${path3}.${key}` : key;
@@ -12550,8 +12550,8 @@ var require_code$1 = /* @__PURE__ */ __commonJSMin(((exports) => {
     }
     emptyStr() {
       if (this._items.length > 1) return false;
-      const item = this._items[0];
-      return item === "" || item === '""';
+      const item2 = this._items[0];
+      return item2 === "" || item2 === '""';
     }
     get str() {
       var _a3;
@@ -13462,7 +13462,7 @@ var require_util = /* @__PURE__ */ __commonJSMin(((exports) => {
   const code_1 = require_code$1();
   function toHash(arr) {
     const hash = {};
-    for (const item of arr) hash[item] = true;
+    for (const item2 of arr) hash[item2] = true;
     return hash;
   }
   exports.toHash = toHash;
@@ -15265,8 +15265,8 @@ var require_utils = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     }
     if (bestLength < 2) return hextets.join(":");
     const head = hextets.slice(0, bestStart).join(":");
-    const tail = hextets.slice(bestStart + bestLength).join(":");
-    return head + "::" + tail;
+    const tail2 = hextets.slice(bestStart + bestLength).join(":");
+    return head + "::" + tail2;
   }
   function normalizeIPv6Address(input2) {
     const compression = input2.indexOf("::");
@@ -17098,18 +17098,18 @@ var require_uniqueItems = /* @__PURE__ */ __commonJSMin(((exports) => {
         return itemTypes.length > 0 && !itemTypes.some((t) => t === "object" || t === "array");
       }
       function loopN(i, j) {
-        const item = gen.name("item");
-        const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item, it.opts.strictNumbers, dataType_1.DataType.Wrong);
+        const item2 = gen.name("item");
+        const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item2, it.opts.strictNumbers, dataType_1.DataType.Wrong);
         const indices = gen.const("indices", (0, codegen_1._)`{}`);
         gen.for((0, codegen_1._)`;${i}--;`, () => {
-          gen.let(item, (0, codegen_1._)`${data}[${i}]`);
+          gen.let(item2, (0, codegen_1._)`${data}[${i}]`);
           gen.if(wrongType, (0, codegen_1._)`continue`);
-          if (itemTypes.length > 1) gen.if((0, codegen_1._)`typeof ${item} == "string"`, (0, codegen_1._)`${item} += "_"`);
-          gen.if((0, codegen_1._)`typeof ${indices}[${item}] == "number"`, () => {
-            gen.assign(j, (0, codegen_1._)`${indices}[${item}]`);
+          if (itemTypes.length > 1) gen.if((0, codegen_1._)`typeof ${item2} == "string"`, (0, codegen_1._)`${item2} += "_"`);
+          gen.if((0, codegen_1._)`typeof ${indices}[${item2}] == "number"`, () => {
+            gen.assign(j, (0, codegen_1._)`${indices}[${item2}]`);
             cxt.error();
             gen.assign(valid, false).break();
-          }).code((0, codegen_1._)`${indices}[${item}] = ${i}`);
+          }).code((0, codegen_1._)`${indices}[${item2}] = ${i}`);
         });
       }
       function loopN2(i, j) {
@@ -22397,6 +22397,68 @@ function formatUsage(account, workers) {
   return lines.join("\n");
 }
 
+// src/codex-stream.ts
+import { stripVTControlCharacters } from "node:util";
+var eventScope = object({ threadId: string2(), turnId: string2() });
+var delta = eventScope.extend({ itemId: string2(), delta: string2() });
+var item = eventScope.extend({ item: discriminatedUnion("type", [
+  object({ id: string2(), type: literal("agentMessage"), text: string2(), phase: string2().nullish() }),
+  object({ id: string2(), type: literal("commandExecution"), command: string2(), status: string2(), exitCode: number2().nullish(), aggregatedOutput: string2().nullish() }),
+  object({ id: string2(), type: literal("fileChange"), status: string2(), changes: array(object({ path: string2() })) })
+]) });
+function streamEvent(method, params) {
+  if (method === "item/started" || method === "item/completed") return item.safeParse(params).data;
+  if (method === "item/agentMessage/delta" || method === "item/commandExecution/outputDelta") {
+    const event = delta.safeParse(params).data;
+    if (event) return { ...event, deltaType: method === "item/agentMessage/delta" ? "agentMessage" : "commandExecution" };
+  }
+}
+var clean = (value) => stripVTControlCharacters(value).replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "");
+var tail = (text, limit2) => text.length > limit2 ? `\u2026${text.slice(1 - limit2)}` : text;
+var CodexStream = class {
+  rows = /* @__PURE__ */ new Map();
+  revision = 0;
+  update(event) {
+    if ("deltaType" in event) {
+      const previous = this.rows.get(event.itemId);
+      this.set(event.itemId, {
+        ...previous,
+        kind: event.deltaType,
+        text: tail((previous?.text ?? "") + clean(event.delta), event.deltaType === "agentMessage" ? 12e3 : 1500)
+      });
+      return;
+    }
+    const entry = event.item;
+    if (entry.type === "agentMessage") {
+      if (entry.text) this.set(entry.id, { kind: entry.type, text: tail(clean(entry.text), 12e3) });
+    } else if (entry.type === "commandExecution") {
+      this.set(entry.id, {
+        kind: entry.type,
+        title: tail(clean(entry.command), 250),
+        status: entry.exitCode == null ? entry.status : `exit ${entry.exitCode}`,
+        text: tail(clean(entry.aggregatedOutput ?? this.rows.get(entry.id)?.text ?? ""), 1500)
+      });
+    } else {
+      this.set(entry.id, { kind: entry.type, status: entry.status, text: tail(clean(entry.changes.map(({ path: path3 }) => path3).join("\n")), 1500) });
+    }
+  }
+  snapshot() {
+    const rows = Array.from(this.rows.values());
+    let length = 0;
+    let first = rows.length;
+    while (first > 0 && length < 14e3) {
+      const row = rows[--first];
+      length += row.text.length + (row.title?.length ?? 0);
+    }
+    return { revision: this.revision, rows: rows.slice(first) };
+  }
+  set(id, row) {
+    this.rows.set(id, row);
+    if (this.rows.size > 30) this.rows.delete(this.rows.keys().next().value);
+    this.revision++;
+  }
+};
+
 // src/codex-agents.ts
 var threadResponse = object({ thread: object({ id: string2() }), model: string2() });
 var turn = object({
@@ -22406,28 +22468,27 @@ var turn = object({
 });
 var turnResponse = object({ turn });
 var turnEvent = turnResponse.extend({ threadId: string2() });
-var itemEvent = object({
-  threadId: string2(),
-  turnId: string2(),
-  item: object({ type: literal("agentMessage"), id: string2(), text: string2(), phase: string2().nullish() })
-});
 var active = (turn2) => turn2.status === "running" || turn2.status === "stopping";
 var input = (text) => [{ type: "text", text }];
-var newTurn = (number5) => ({ number: number5, status: "running", seenItems: /* @__PURE__ */ new Set() });
-function describe2(agent) {
+var newTurn = (number5) => ({ number: number5, status: "running", seenItems: /* @__PURE__ */ new Set(), stream: new CodexStream(), waiters: /* @__PURE__ */ new Set() });
+function describe2(agent, current = agent.turn) {
   return {
     agent_id: agent.id,
     name: agent.name,
     cwd: agent.cwd,
     model: agent.model,
     sandbox: agent.sandbox,
-    turn: agent.turn.number,
-    status: agent.connectionError ? "failed" : agent.turn.status,
-    error: agent.connectionError ?? agent.turn.error
+    turn: current.number,
+    status: agent.connectionError ? "failed" : current.status,
+    error: agent.connectionError ?? current.error
   };
 }
 function wake(agent) {
   for (const waiter of agent.waiters) waiter();
+}
+function finishTurn(agent, turn2) {
+  for (const waiter of turn2.waiters) waiter();
+  wake(agent);
 }
 var CodexAgents = class {
   constructor(baseDir2, version3, connect = (events) => new CodexAppServer(baseDir2, version3, events)) {
@@ -22512,7 +22573,11 @@ var CodexAgents = class {
     return describe2(agent);
   }
   list() {
-    return Array.from(this.agents.values(), describe2);
+    return Array.from(this.agents.values(), (agent) => describe2(agent));
+  }
+  stream(id) {
+    const agent = this.getAgent(id);
+    return { ...describe2(agent), ...agent.turn.stream.snapshot() };
   }
   async usage() {
     let account;
@@ -22526,25 +22591,27 @@ var CodexAgents = class {
   async wait(id, cursor, timeoutMs, options = {}) {
     const agent = this.getAgent(id);
     const current = agent.turn;
-    const { signal, interruptOnCancel } = options;
+    const { signal, interruptOnCancel, untilComplete } = options;
     if (cursor > agent.messages.length) throw new Error("cursor is ahead of this agent\u2019s messages");
-    if (cursor === agent.messages.length && active(current) && !agent.connectionError && timeoutMs > 0 && !signal?.aborted) {
+    if ((untilComplete || cursor === agent.messages.length) && active(current) && !agent.connectionError && timeoutMs !== 0 && !signal?.aborted) {
+      const waiters = untilComplete ? current.waiters : agent.waiters;
       await new Promise((resolve) => {
         const finish = () => {
           clearTimeout(timer);
-          agent.waiters.delete(finish);
+          waiters.delete(finish);
           signal?.removeEventListener("abort", finish);
           resolve();
         };
-        const timer = setTimeout(finish, timeoutMs);
-        agent.waiters.add(finish);
+        const timer = timeoutMs === void 0 ? void 0 : setTimeout(finish, timeoutMs);
+        waiters.add(finish);
         signal?.addEventListener("abort", finish, { once: true });
       });
     }
     if (signal?.aborted && interruptOnCancel && current === agent.turn) await this.stop(id);
-    const messages = agent.messages.slice(cursor, cursor + 20);
+    const messages = agent.messages.slice(cursor, cursor + 20).filter((message) => !untilComplete || message.turn <= current.number);
     const next_cursor = cursor + messages.length;
-    return { ...describe2(agent), messages, next_cursor, has_more: next_cursor < agent.messages.length };
+    const next = agent.messages[next_cursor];
+    return { ...describe2(agent, untilComplete ? current : agent.turn), messages, next_cursor, has_more: !!next && (!untilComplete || next.turn <= current.number) };
   }
   close() {
     this.closed = true;
@@ -22565,7 +22632,7 @@ var CodexAgents = class {
         for (const agent of this.agents.values()) {
           if (agent.connection !== connection) continue;
           agent.connectionError = error2.message;
-          wake(agent);
+          finishTurn(agent, agent.turn);
         }
       }
     });
@@ -22580,7 +22647,7 @@ var CodexAgents = class {
     } catch (error2) {
       current.status = "failed";
       current.error = error2 instanceof Error ? error2.message : String(error2);
-      wake(agent);
+      finishTurn(agent, current);
       throw error2;
     }
   }
@@ -22590,9 +22657,23 @@ var CodexAgents = class {
     if (update.status === "inProgress") return;
     current.status = update.status;
     current.error = update.error?.message;
-    wake(agent);
+    finishTurn(agent, current);
   }
   onNotification(connection, method, params) {
+    const streamed = streamEvent(method, params);
+    if (streamed) {
+      const agent = this.agents.get(streamed.threadId);
+      if (agent?.connection !== connection || !active(agent.turn) || agent.turn.id !== streamed.turnId) return;
+      agent.turn.stream.update(streamed);
+      if (method === "item/completed" && "item" in streamed && streamed.item.type === "agentMessage") {
+        const { item: item2 } = streamed;
+        if (agent.turn.seenItems.has(item2.id)) return;
+        agent.turn.seenItems.add(item2.id);
+        agent.messages.push({ turn: agent.turn.number, phase: item2.phase ?? null, text: item2.text });
+        wake(agent);
+      }
+      return;
+    }
     if (method === "thread/tokenUsage/updated") {
       const event = threadUsage.safeParse(params);
       if (!event.success) return;
@@ -22604,16 +22685,6 @@ var CodexAgents = class {
       if (!event.success) return;
       const agent = this.agents.get(event.data.threadId);
       if (agent?.connection === connection) this.updateTurn(agent, agent.turn, event.data.turn);
-    }
-    if (method === "item/completed") {
-      const event = itemEvent.safeParse(params);
-      if (!event.success) return;
-      const { threadId, turnId, item } = event.data;
-      const agent = this.agents.get(threadId);
-      if (agent?.connection !== connection || !active(agent.turn) || agent.turn.id !== turnId || agent.turn.seenItems.has(item.id)) return;
-      agent.turn.seenItems.add(item.id);
-      agent.messages.push({ turn: agent.turn.number, phase: item.phase ?? null, text: item.text });
-      wake(agent);
     }
   }
 };
@@ -22644,16 +22715,37 @@ function registerCodexTools(server, agents) {
     inputSchema: object({ agent_id: agentId, message: nonempty, active_only: boolean2().optional().describe("Only steer an active turn. Return not_active if it already ended.") })
   }, ({ agent_id, message, active_only }) => response(() => agents.send(agent_id, message, active_only)));
   server.registerTool("codex_wait", {
-    description: "Read Codex commentary and replies. Returns when there are unread messages, the turn finishes, or the wait expires. Reuse next_cursor for subsequent reads, including follow-ups. If has_more is true, read the next page before considering the result complete.",
+    description: "Read Codex commentary and replies. Set until_complete for a single wait that returns when the turn finishes. Otherwise returns on unread messages, completion, or timeout. Reuse next_cursor for subsequent reads, including follow-ups. If has_more is true, read the remaining pages.",
     inputSchema: object({
       agent_id: agentId,
       cursor: number2().int().nonnegative().optional().describe("Use 0 on the first read, then the previous next_cursor"),
       timeout_seconds: number2().int().min(0).max(60).optional().describe("Default 25 seconds. Use 0 to check immediately."),
+      until_complete: boolean2().optional().describe("Wait for the current turn to finish. With no timeout_seconds this waits until completion or cancellation."),
       interrupt_on_cancel: boolean2().optional().describe("Interrupt the current Codex turn if Claude Code cancels this wait. Defaults to false.")
     })
-  }, ({ agent_id, cursor = 0, timeout_seconds = 25, interrupt_on_cancel }, ctx) => response(
-    () => agents.wait(agent_id, cursor, timeout_seconds * 1e3, { signal: ctx.mcpReq.signal, interruptOnCancel: interrupt_on_cancel })
-  ));
+  }, ({ agent_id, cursor = 0, timeout_seconds, interrupt_on_cancel, until_complete }, ctx) => response(async () => {
+    const timeout = timeout_seconds ?? (until_complete ? void 0 : 25);
+    const progressToken = ctx.mcpReq._meta?.progressToken;
+    let progress = 0;
+    const heartbeat = until_complete && progressToken !== void 0 ? setInterval(() => {
+      void ctx.mcpReq.notify({ method: "notifications/progress", params: { progressToken, progress: ++progress, message: "Codex is working" } }).catch(() => {
+      });
+    }, 15e3) : void 0;
+    try {
+      return await agents.wait(agent_id, cursor, timeout === void 0 ? void 0 : timeout * 1e3, {
+        signal: ctx.mcpReq.signal,
+        interruptOnCancel: interrupt_on_cancel,
+        untilComplete: until_complete
+      });
+    } finally {
+      clearInterval(heartbeat);
+    }
+  }));
+  server.registerTool("codex_stream", {
+    description: "Read a snapshot of the current Codex turn for live display. Includes in-progress text, commands, and file activity. Use codex_wait with until_complete to get the final result in one call.",
+    inputSchema: object({ agent_id: agentId }),
+    annotations: { readOnlyHint: true }
+  }, ({ agent_id }) => response(() => agents.stream(agent_id)));
   server.registerTool("codex_list", {
     description: "List the Codex subagents started in this Claude session and their current turn status.",
     inputSchema: object({})
@@ -22669,7 +22761,7 @@ function registerCodexTools(server, agents) {
 }
 
 // src/server.ts
-var version2 = "0.3.0";
+var version2 = "0.4.0";
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var codex = new CodexAgents(baseDir, version2);
 var handle = serveStdio(() => {

@@ -31,16 +31,35 @@ export function registerCodexTools(server: McpServer, agents: CodexAgents): void
   }, ({ agent_id, message, active_only }) => response(() => agents.send(agent_id, message, active_only)));
 
   server.registerTool('codex_wait', {
-    description: 'Read Codex commentary and replies. Returns when there are unread messages, the turn finishes, or the wait expires. Reuse next_cursor for subsequent reads, including follow-ups. If has_more is true, read the next page before considering the result complete.',
+    description: 'Read Codex commentary and replies. Set until_complete for a single wait that returns when the turn finishes. Otherwise returns on unread messages, completion, or timeout. Reuse next_cursor for subsequent reads, including follow-ups. If has_more is true, read the remaining pages.',
     inputSchema: z.object({
       agent_id: agentId,
       cursor: z.number().int().nonnegative().optional().describe('Use 0 on the first read, then the previous next_cursor'),
       timeout_seconds: z.number().int().min(0).max(60).optional().describe('Default 25 seconds. Use 0 to check immediately.'),
+      until_complete: z.boolean().optional().describe('Wait for the current turn to finish. With no timeout_seconds this waits until completion or cancellation.'),
       interrupt_on_cancel: z.boolean().optional().describe('Interrupt the current Codex turn if Claude Code cancels this wait. Defaults to false.'),
     }),
-  }, ({ agent_id, cursor = 0, timeout_seconds = 25, interrupt_on_cancel }, ctx) => response(
-    () => agents.wait(agent_id, cursor, timeout_seconds * 1000, { signal: ctx.mcpReq.signal, interruptOnCancel: interrupt_on_cancel }),
-  ));
+  }, ({ agent_id, cursor = 0, timeout_seconds, interrupt_on_cancel, until_complete }, ctx) => response(async () => {
+    const timeout = timeout_seconds ?? (until_complete ? undefined : 25);
+    const progressToken = ctx.mcpReq._meta?.progressToken;
+    let progress = 0;
+    const heartbeat = until_complete && progressToken !== undefined ? setInterval(() => {
+      void ctx.mcpReq.notify({ method: 'notifications/progress', params: { progressToken, progress: ++progress, message: 'Codex is working' } }).catch(() => {});
+    }, 15_000) : undefined;
+    try {
+      return await agents.wait(agent_id, cursor, timeout === undefined ? undefined : timeout * 1_000, {
+        signal: ctx.mcpReq.signal, interruptOnCancel: interrupt_on_cancel, untilComplete: until_complete,
+      });
+    } finally {
+      clearInterval(heartbeat);
+    }
+  }));
+
+  server.registerTool('codex_stream', {
+    description: 'Read a snapshot of the current Codex turn for live display. Includes in-progress text, commands, and file activity. Use codex_wait with until_complete to get the final result in one call.',
+    inputSchema: z.object({ agent_id: agentId }),
+    annotations: { readOnlyHint: true },
+  }, ({ agent_id }) => response(() => agents.stream(agent_id)));
 
   server.registerTool('codex_list', {
     description: 'List the Codex subagents started in this Claude session and their current turn status.',

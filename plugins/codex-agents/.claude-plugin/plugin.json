@@ -1,7 +1,7 @@
 {
   "name": "codex-agents",
   "description": "Delegate tasks to background Codex subagents, send messages, receive replies, and interrupt work",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "andrew-from-toronto"
   },
