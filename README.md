@@ -2,18 +2,38 @@
 
 <a href="https://www.urbandictionary.com/define.php?term=two-four"><img src="docs/two-four.png" alt="two-four: Canadian term referring to a case of beer containing twenty-four bottles"></a>
 
-A Claude Code plugin with one MCP server for batch file edits, multi-pattern search, shell commands, GitHub Actions results and Claude plan usage.
+A Claude Code marketplace with two independently installable plugins. `two-four` provides batch file edits, multi-pattern search, shell commands, GitHub Actions results, and Claude plan usage. `codex-agents` connects Claude to Codex subagents.
 
 ## Install
 
 ```
 /plugin marketplace add andrew-from-toronto/claude-two-four
+```
+
+Install either plugin or both.
+
+```
 /plugin install two-four@claude-two-four
+/plugin install codex-agents@claude-two-four
 ```
 
 Needs Node 22 or later on the machine.
 
-## Tools
+## Codex Agents
+
+Install the [Codex CLI](https://developers.openai.com/codex/cli), make `codex` available on `PATH`, and sign in before delegating. For example, ask Claude to “Delegate a read-only review to Codex, ask it to focus on error handling, and report back with its findings.”
+
+| Tool | What it does |
+| --- | --- |
+| `codex_spawn` | Starts a background Codex subagent with its own conversation. Pass a prompt and optionally a name, working directory, model, or sandbox. |
+| `codex_send` | Steers an active turn or sends a follow-up in the same conversation after the turn ends. |
+| `codex_wait` | Reads commentary and answers as they become available. Start at cursor `0` and reuse `next_cursor` on later reads. Use `timeout_seconds: 0` to check immediately. |
+| `codex_list` | Shows subagents and their current status. |
+| `codex_stop` | Interrupts the active turn. Send a follow-up once it has stopped to continue the conversation. |
+
+Claude can run several workers in parallel and address each by its ID. Workers are scoped to the current plugin session. The MCP tools provide the lifecycle and mailbox, so Claude receives updates through `codex_wait`. Codex defaults to a read-only sandbox and uses its configured model. Pass `sandbox: "workspace-write"` when the task calls for changes. Codex runs under its own sandbox with approval prompts disabled.
+
+## Two-Four tools
 
 ### edit
 
@@ -61,7 +81,7 @@ A `search` tool that runs several regex patterns over many files in one call.
 
 ## Develop
 
-In `plugins/two-four`:
+Run these commands from `plugins/two-four` or `plugins/codex-agents`.
 
 ```
 pnpm install
@@ -69,4 +89,4 @@ pnpm test
 pnpm build
 ```
 
-The plugin runs its committed bundle `dist/server.mjs` as-is, so rebuild and commit it with every source change.
+Each plugin runs its committed `dist/server.mjs` bundle. Rebuild the affected bundle with each source change.

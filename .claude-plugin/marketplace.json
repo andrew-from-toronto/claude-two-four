@@ -9,6 +9,11 @@
       "name": "two-four",
       "source": "./plugins/two-four",
       "description": "Batch file edits, multi-pattern search, shell commands with saved output and a digest, GitHub Actions results and Claude plan usage, in one MCP server"
+    },
+    {
+      "name": "codex-agents",
+      "source": "./plugins/codex-agents",
+      "description": "Delegate tasks to background Codex subagents, send messages, receive replies, and interrupt work"
     }
   ]
 }
