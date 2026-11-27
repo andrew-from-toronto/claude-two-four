@@ -2,6 +2,7 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import * as z from 'zod/v4';
 import { CodexAppServer, type CodexConnection, type ConnectCodex } from './codex-app-server.js';
+import { accountLimits, formatUsage, threadUsage, type WorkerUsage } from './codex-usage.js';
 
 const threadResponse = z.object({ thread: z.object({ id: z.string() }), model: z.string() });
 const turn = z.object({
@@ -30,6 +31,7 @@ type Agent = {
   connectionError?: string;
   turn: AgentTurn;
   messages: Message[];
+  usage?: WorkerUsage['usage'];
   waiters: Set<() => void>;
 };
 
@@ -101,11 +103,14 @@ export class CodexAgents {
     }
   }
 
-  async send(id: string, message: string) {
+  async send(id: string, message: string, activeOnly = false) {
     const agent = this.getAgent(id);
     if (agent.connectionError) throw new Error(agent.connectionError);
     const current = agent.turn;
-    if (current.status === 'stopping') throw new Error('Codex is stopping this turn. Wait for it to finish, then send the message again.');
+    if (current.status === 'stopping') {
+      if (activeOnly) return { ...describe(agent), delivery: 'not_active' };
+      throw new Error('Codex is stopping this turn. Wait for it to finish, then send the message again.');
+    }
     if (active(current)) {
       if (!current.id) throw new Error('Codex is starting a turn. Retry once it starts.');
       try {
@@ -115,6 +120,7 @@ export class CodexAgents {
         if (agent.connectionError || active(current) || agent.turn !== current) throw error;
       }
     }
+    if (activeOnly) return { ...describe(agent), delivery: 'not_active' };
     await this.startTurn(agent, message, newTurn(current.number + 1));
     return { ...describe(agent), delivery: 'new_turn' };
   }
@@ -138,6 +144,16 @@ export class CodexAgents {
 
   list() {
     return Array.from(this.agents.values(), describe);
+  }
+
+  async usage(): Promise<string> {
+    let account: z.infer<typeof accountLimits> | string;
+    try {
+      account = accountLimits.parse(await this.getConnection().request('account/rateLimits/read', {}));
+    } catch (error) {
+      account = error instanceof z.ZodError ? 'unexpected rate-limit response' : error instanceof Error ? error.message : String(error);
+    }
+    return formatUsage(account, Array.from(this.agents.values(), ({ id, name, usage }) => ({ id, name, usage })));
   }
 
   async wait(id: string, cursor: number, timeoutMs: number, options: { signal?: AbortSignal; interruptOnCancel?: boolean } = {}) {
@@ -216,6 +232,12 @@ export class CodexAgents {
   }
 
   private onNotification(connection: CodexConnection, method: string, params: unknown): void {
+    if (method === 'thread/tokenUsage/updated') {
+      const event = threadUsage.safeParse(params);
+      if (!event.success) return;
+      const agent = this.agents.get(event.data.threadId);
+      if (agent?.connection === connection) agent.usage = event.data.tokenUsage.total;
+    }
     if (method === 'turn/started' || method === 'turn/completed') {
       const event = turnEvent.safeParse(params);
       if (!event.success) return;

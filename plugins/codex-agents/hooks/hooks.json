@@ -1,0 +1,4 @@
+{
+  "description": "Route messages to running Codex workers and show Codex usage",
+  "modules": ["./codex.js"]
+}

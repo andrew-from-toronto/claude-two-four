@@ -27,8 +27,8 @@ export function registerCodexTools(server: McpServer, agents: CodexAgents): void
 
   server.registerTool('codex_send', {
     description: 'Send a message to a Codex subagent. Steers a running turn or starts a follow-up in the same conversation after it finishes. Use codex_wait with the last next_cursor to read the reply.',
-    inputSchema: z.object({ agent_id: agentId, message: nonempty }),
-  }, ({ agent_id, message }) => response(() => agents.send(agent_id, message)));
+    inputSchema: z.object({ agent_id: agentId, message: nonempty, active_only: z.boolean().optional().describe('Only steer an active turn. Return not_active if it already ended.') }),
+  }, ({ agent_id, message, active_only }) => response(() => agents.send(agent_id, message, active_only)));
 
   server.registerTool('codex_wait', {
     description: 'Read Codex commentary and replies. Returns when there are unread messages, the turn finishes, or the wait expires. Reuse next_cursor for subsequent reads, including follow-ups. If has_more is true, read the next page before considering the result complete.',
@@ -46,6 +46,11 @@ export function registerCodexTools(server: McpServer, agents: CodexAgents): void
     description: 'List the Codex subagents started in this Claude session and their current turn status.',
     inputSchema: z.object({}),
   }, () => response(() => agents.list()));
+
+  server.registerTool('codex_usage', {
+    description: 'Show current Codex allowance and reset times, plus token totals for Codex workers started in this Claude session.',
+    inputSchema: z.object({}),
+  }, async () => ({ content: [{ type: 'text', text: await agents.usage() }] }));
 
   server.registerTool('codex_stop', {
     description: 'Interrupt a running Codex subagent turn. Read its status with codex_wait. A stopped subagent can receive a follow-up with codex_send after interruption completes.',

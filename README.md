@@ -23,7 +23,9 @@ Needs Node 22 or later on the machine.
 
 Install the [Codex CLI](https://developers.openai.com/codex/cli), make `codex` available on `PATH`, and sign in before delegating.
 
-In Claude Code, type `@` and select `codex-agents:codex`, then give it a task. The background subagent appears in the terminal's subagent panel and in `/tasks`. Open its transcript or send it a follow-up through Claude's usual subagent controls. The Claude subagent relays messages and results while Codex does the assigned work. It reports the worker ID to the parent for direct mid-turn steering or interruption through the MCP tools.
+In Claude Code, type `@` and select `codex-agents:codex`, then give it a task. The background subagent appears in the terminal's subagent panel and in `/tasks`. Open its transcript and use **Steer Codex** to send instructions directly to the running Codex turn. Click the field or press `Ctrl+X`, then `Tab` to focus it. Use the regular transcript prompt for follow-ups after a turn completes.
+
+Run `/codex-usage` to see your current Codex allowance and reset times alongside token totals for each worker in this Claude session. Claude Code `2.1.332` was tested with the transcript control and slash command. Both require Claude Code mods to be enabled.
 
 The parent can also call the MCP tools directly.
 
@@ -34,6 +36,7 @@ The parent can also call the MCP tools directly.
 | `codex_wait` | Reads commentary and answers as they become available. Start at cursor `0` and reuse `next_cursor` on later reads. Use `timeout_seconds: 0` to check immediately. |
 | `codex_list` | Shows subagents and their current status. |
 | `codex_stop` | Interrupts the active turn. Send a follow-up once it has stopped to continue the conversation. |
+| `codex_usage` | Shows the same allowance and worker token totals as `/codex-usage`. |
 
 Claude can run several workers in parallel and address each by its ID. Workers are scoped to the current plugin session. The MCP tools provide the lifecycle and mailbox, so Claude receives updates through `codex_wait`. Codex defaults to a read-only sandbox and uses its configured model. Pass `sandbox: "workspace-write"` when the task calls for changes. Codex runs under its own sandbox with approval prompts disabled.
 

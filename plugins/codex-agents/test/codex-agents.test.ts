@@ -8,7 +8,7 @@ function setup() {
   let nextThread = 0;
   let nextTurn = 0;
   const turns = new Map<string, string>();
-  const request = vi.fn(async (method: string, params: Record<string, unknown>) => {
+  const request = vi.fn(async (method: string, params: Record<string, unknown>): Promise<unknown> => {
     if (method === 'thread/start') return { thread: { id: `thread-${++nextThread}` }, model: 'demo' };
     if (method === 'turn/start') {
       const id = `turn-${++nextTurn}`;
@@ -30,6 +30,11 @@ function setup() {
     },
     complete(threadId: string, status = 'completed') {
       events.notification('turn/completed', { threadId, turn: { id: turns.get(threadId), status } });
+    },
+    usage(threadId: string, totalTokens: number) {
+      events.notification('thread/tokenUsage/updated', { threadId, tokenUsage: { total: {
+        totalTokens, inputTokens: totalTokens - 100, cachedInputTokens: 20, outputTokens: 100,
+      } } });
     },
   };
 }
@@ -85,6 +90,36 @@ it('sends a follow-up if steering loses the race with turn completion', async ()
     throw new Error('No active turn');
   });
   expect(await agents.send(worker.agent_id, 'Follow up')).toMatchObject({ delivery: 'new_turn', turn: 2, status: 'running' });
+});
+
+it('leaves a completed turn for the relay to resume when asked to steer only', async () => {
+  const { agents, request, complete } = setup();
+  const worker = await agents.spawn({ prompt: 'Review' });
+  request.mockImplementationOnce(async () => {
+    complete(worker.agent_id);
+    throw new Error('No active turn');
+  });
+  expect(await agents.send(worker.agent_id, 'One more thing', true)).toMatchObject({ delivery: 'not_active', turn: 1 });
+  expect(request.mock.calls.filter(([method]) => method === 'turn/start')).toHaveLength(1);
+});
+
+it('combines current account allowance with the latest per-worker token totals', async () => {
+  const { agents, request, usage } = setup();
+  const worker = await agents.spawn({ prompt: 'Review', name: 'Review' });
+  const other = await agents.spawn({ prompt: 'Test', name: 'Test' });
+  usage(worker.agent_id, 500);
+  usage(worker.agent_id, 1_000);
+  request.mockResolvedValueOnce({
+    rateLimits: { limitId: 'codex', primary: { usedPercent: 25, windowDurationMins: 300, resetsAt: 1795806000 } },
+  });
+  const report = await agents.usage();
+  expect(request).toHaveBeenLastCalledWith('account/rateLimits/read', {});
+  expect(report).toContain('5h · 75% remaining · resets');
+  expect(report).toContain(`Review (${worker.agent_id}) · 1,000 total · 900 input (20 cached) · 100 output`);
+  expect(report).toContain(`Test (${other.agent_id}) · tokens pending`);
+  request.mockRejectedValueOnce(new Error('Sign-in required'));
+  expect(await agents.usage()).toContain('Unavailable (Sign-in required)');
+  expect(agents.list().map(({ status }) => status)).toEqual(['running', 'running']);
 });
 
 it('wakes readers on interruption and disconnect, and keeps interrupted threads resumable', async () => {

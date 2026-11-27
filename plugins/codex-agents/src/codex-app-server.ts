@@ -89,7 +89,13 @@ export class CodexAppServer implements CodexConnection {
     if (this.error) return Promise.reject(this.error);
     const id = ++this.nextId;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.close(new Error(`Codex app-server timed out handling ${method}`)), 30_000);
+      const timer = setTimeout(() => {
+        const error = new Error(`Codex app-server timed out handling ${method}`);
+        if (method === 'account/rateLimits/read') {
+          this.pending.delete(id);
+          reject(error);
+        } else this.close(error);
+      }, 30_000);
       this.pending.set(id, {
         resolve: (result) => { clearTimeout(timer); resolve(result); },
         reject: (error) => { clearTimeout(timer); reject(error); },

@@ -5780,6 +5780,7 @@ var initializer2 = (inst, issues) => {
     }
   });
 };
+var ZodError = /* @__PURE__ */ $constructor("ZodError", initializer2);
 var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, void 0, {
   Parent: Error
 });
@@ -14428,11 +14429,11 @@ var require_resolve = /* @__PURE__ */ __commonJSMin(((exports) => {
     "enum",
     "const"
   ]);
-  function inlineRef(schema, limit = true) {
+  function inlineRef(schema, limit2 = true) {
     if (typeof schema == "boolean") return true;
-    if (limit === true) return !hasRef(schema);
-    if (!limit) return false;
-    return countKeys(schema) <= limit;
+    if (limit2 === true) return !hasRef(schema);
+    if (!limit2) return false;
+    return countKeys(schema) <= limit2;
   }
   exports.inlineRef = inlineRef;
   const REF_KEYWORDS = /* @__PURE__ */ new Set([
@@ -22309,7 +22310,13 @@ var CodexAppServer = class {
     if (this.error) return Promise.reject(this.error);
     const id = ++this.nextId;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.close(new Error(`Codex app-server timed out handling ${method}`)), 3e4);
+      const timer = setTimeout(() => {
+        const error2 = new Error(`Codex app-server timed out handling ${method}`);
+        if (method === "account/rateLimits/read") {
+          this.pending.delete(id);
+          reject(error2);
+        } else this.close(error2);
+      }, 3e4);
       this.pending.set(id, {
         resolve: (result) => {
           clearTimeout(timer);
@@ -22352,6 +22359,44 @@ var CodexAppServer = class {
   }
 };
 
+// src/codex-usage.ts
+var limitWindow = object({ usedPercent: number2(), windowDurationMins: number2().nullish(), resetsAt: number2().nullish() });
+var limit = object({ limitId: string2().nullish(), limitName: string2().nullish(), primary: limitWindow.nullish(), secondary: limitWindow.nullish() });
+var accountLimits = object({ rateLimits: limit, rateLimitsByLimitId: record(string2(), limit).nullish() });
+var threadUsage = object({
+  threadId: string2(),
+  tokenUsage: object({ total: object({ totalTokens: number2(), inputTokens: number2(), cachedInputTokens: number2(), outputTokens: number2() }) })
+});
+var eastern = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+var number4 = new Intl.NumberFormat("en-CA", { maximumFractionDigits: 1 });
+function formatWindow(window) {
+  const minutes = window.windowDurationMins;
+  const duration3 = minutes == null ? "Usage window" : minutes % 1440 === 0 ? `${minutes / 1440}d` : minutes % 60 === 0 ? `${minutes / 60}h` : `${minutes}m`;
+  const remaining = number4.format(Math.max(0, 100 - window.usedPercent));
+  return `${duration3} \xB7 ${remaining}% remaining${window.resetsAt == null ? "" : ` \xB7 resets ${eastern.format(window.resetsAt * 1e3)}`}`;
+}
+function formatUsage(account, workers) {
+  const lines = ["Codex allowance"];
+  if (typeof account === "string") lines.push(`Unavailable (${account})`);
+  else {
+    const buckets = Object.entries(account.rateLimitsByLimitId ?? {});
+    if (!buckets.length) buckets.push([account.rateLimits.limitId ?? "Codex", account.rateLimits]);
+    for (const [id, bucket] of buckets) {
+      const windows = [bucket.primary, bucket.secondary].filter((window) => window != null);
+      const label = bucket.limitName ?? (id === "codex" ? "Codex" : id);
+      for (const window of windows) lines.push(`${label} \xB7 ${formatWindow(window)}`);
+    }
+    if (lines.length === 1) lines.push("Codex did not report allowance windows for this sign-in.");
+  }
+  lines.push("", "Codex worker tokens in this Claude session");
+  if (!workers.length) lines.push("No workers started.");
+  for (const { id, name, usage } of workers) {
+    const label = name ? `${name} (${id})` : id;
+    lines.push(usage ? `${label} \xB7 ${number4.format(usage.totalTokens)} total \xB7 ${number4.format(usage.inputTokens)} input (${number4.format(usage.cachedInputTokens)} cached) \xB7 ${number4.format(usage.outputTokens)} output` : `${label} \xB7 tokens pending`);
+  }
+  return lines.join("\n");
+}
+
 // src/codex-agents.ts
 var threadResponse = object({ thread: object({ id: string2() }), model: string2() });
 var turn = object({
@@ -22368,7 +22413,7 @@ var itemEvent = object({
 });
 var active = (turn2) => turn2.status === "running" || turn2.status === "stopping";
 var input = (text) => [{ type: "text", text }];
-var newTurn = (number4) => ({ number: number4, status: "running", seenItems: /* @__PURE__ */ new Set() });
+var newTurn = (number5) => ({ number: number5, status: "running", seenItems: /* @__PURE__ */ new Set() });
 function describe2(agent) {
   return {
     agent_id: agent.id,
@@ -22429,11 +22474,14 @@ var CodexAgents = class {
       throw error2;
     }
   }
-  async send(id, message) {
+  async send(id, message, activeOnly = false) {
     const agent = this.getAgent(id);
     if (agent.connectionError) throw new Error(agent.connectionError);
     const current = agent.turn;
-    if (current.status === "stopping") throw new Error("Codex is stopping this turn. Wait for it to finish, then send the message again.");
+    if (current.status === "stopping") {
+      if (activeOnly) return { ...describe2(agent), delivery: "not_active" };
+      throw new Error("Codex is stopping this turn. Wait for it to finish, then send the message again.");
+    }
     if (active(current)) {
       if (!current.id) throw new Error("Codex is starting a turn. Retry once it starts.");
       try {
@@ -22443,6 +22491,7 @@ var CodexAgents = class {
         if (agent.connectionError || active(current) || agent.turn !== current) throw error2;
       }
     }
+    if (activeOnly) return { ...describe2(agent), delivery: "not_active" };
     await this.startTurn(agent, message, newTurn(current.number + 1));
     return { ...describe2(agent), delivery: "new_turn" };
   }
@@ -22464,6 +22513,15 @@ var CodexAgents = class {
   }
   list() {
     return Array.from(this.agents.values(), describe2);
+  }
+  async usage() {
+    let account;
+    try {
+      account = accountLimits.parse(await this.getConnection().request("account/rateLimits/read", {}));
+    } catch (error2) {
+      account = error2 instanceof ZodError ? "unexpected rate-limit response" : error2 instanceof Error ? error2.message : String(error2);
+    }
+    return formatUsage(account, Array.from(this.agents.values(), ({ id, name, usage }) => ({ id, name, usage })));
   }
   async wait(id, cursor, timeoutMs, options = {}) {
     const agent = this.getAgent(id);
@@ -22535,6 +22593,12 @@ var CodexAgents = class {
     wake(agent);
   }
   onNotification(connection, method, params) {
+    if (method === "thread/tokenUsage/updated") {
+      const event = threadUsage.safeParse(params);
+      if (!event.success) return;
+      const agent = this.agents.get(event.data.threadId);
+      if (agent?.connection === connection) agent.usage = event.data.tokenUsage.total;
+    }
     if (method === "turn/started" || method === "turn/completed") {
       const event = turnEvent.safeParse(params);
       if (!event.success) return;
@@ -22577,8 +22641,8 @@ function registerCodexTools(server, agents) {
   }, (spec) => response(() => agents.spawn(spec)));
   server.registerTool("codex_send", {
     description: "Send a message to a Codex subagent. Steers a running turn or starts a follow-up in the same conversation after it finishes. Use codex_wait with the last next_cursor to read the reply.",
-    inputSchema: object({ agent_id: agentId, message: nonempty })
-  }, ({ agent_id, message }) => response(() => agents.send(agent_id, message)));
+    inputSchema: object({ agent_id: agentId, message: nonempty, active_only: boolean2().optional().describe("Only steer an active turn. Return not_active if it already ended.") })
+  }, ({ agent_id, message, active_only }) => response(() => agents.send(agent_id, message, active_only)));
   server.registerTool("codex_wait", {
     description: "Read Codex commentary and replies. Returns when there are unread messages, the turn finishes, or the wait expires. Reuse next_cursor for subsequent reads, including follow-ups. If has_more is true, read the next page before considering the result complete.",
     inputSchema: object({
@@ -22594,6 +22658,10 @@ function registerCodexTools(server, agents) {
     description: "List the Codex subagents started in this Claude session and their current turn status.",
     inputSchema: object({})
   }, () => response(() => agents.list()));
+  server.registerTool("codex_usage", {
+    description: "Show current Codex allowance and reset times, plus token totals for Codex workers started in this Claude session.",
+    inputSchema: object({})
+  }, async () => ({ content: [{ type: "text", text: await agents.usage() }] }));
   server.registerTool("codex_stop", {
     description: "Interrupt a running Codex subagent turn. Read its status with codex_wait. A stopped subagent can receive a follow-up with codex_send after interruption completes.",
     inputSchema: object({ agent_id: agentId })
@@ -22601,7 +22669,7 @@ function registerCodexTools(server, agents) {
 }
 
 // src/server.ts
-var version2 = "0.2.0";
+var version2 = "0.3.0";
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var codex = new CodexAgents(baseDir, version2);
 var handle = serveStdio(() => {
