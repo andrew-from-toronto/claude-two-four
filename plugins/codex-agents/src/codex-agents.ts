@@ -140,10 +140,12 @@ export class CodexAgents {
     return Array.from(this.agents.values(), describe);
   }
 
-  async wait(id: string, cursor: number, timeoutMs: number, signal?: AbortSignal) {
+  async wait(id: string, cursor: number, timeoutMs: number, options: { signal?: AbortSignal; interruptOnCancel?: boolean } = {}) {
     const agent = this.getAgent(id);
+    const current = agent.turn;
+    const { signal, interruptOnCancel } = options;
     if (cursor > agent.messages.length) throw new Error('cursor is ahead of this agent’s messages');
-    if (cursor === agent.messages.length && active(agent.turn) && !agent.connectionError && timeoutMs > 0 && !signal?.aborted) {
+    if (cursor === agent.messages.length && active(current) && !agent.connectionError && timeoutMs > 0 && !signal?.aborted) {
       await new Promise<void>((resolve) => {
         const finish = () => {
           clearTimeout(timer);
@@ -156,6 +158,7 @@ export class CodexAgents {
         signal?.addEventListener('abort', finish, { once: true });
       });
     }
+    if (signal?.aborted && interruptOnCancel && current === agent.turn) await this.stop(id);
     const messages = agent.messages.slice(cursor, cursor + 20);
     const next_cursor = cursor + messages.length;
     return { ...describe(agent), messages, next_cursor, has_more: next_cursor < agent.messages.length };

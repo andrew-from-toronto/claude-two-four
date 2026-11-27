@@ -36,9 +36,10 @@ export function registerCodexTools(server: McpServer, agents: CodexAgents): void
       agent_id: agentId,
       cursor: z.number().int().nonnegative().optional().describe('Use 0 on the first read, then the previous next_cursor'),
       timeout_seconds: z.number().int().min(0).max(60).optional().describe('Default 25 seconds. Use 0 to check immediately.'),
+      interrupt_on_cancel: z.boolean().optional().describe('Interrupt the current Codex turn if Claude Code cancels this wait. Defaults to false.'),
     }),
-  }, ({ agent_id, cursor = 0, timeout_seconds = 25 }, ctx) => response(
-    () => agents.wait(agent_id, cursor, timeout_seconds * 1000, ctx.mcpReq.signal),
+  }, ({ agent_id, cursor = 0, timeout_seconds = 25, interrupt_on_cancel }, ctx) => response(
+    () => agents.wait(agent_id, cursor, timeout_seconds * 1000, { signal: ctx.mcpReq.signal, interruptOnCancel: interrupt_on_cancel }),
   ));
 
   server.registerTool('codex_list', {

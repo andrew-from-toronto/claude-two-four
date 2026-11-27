@@ -100,3 +100,19 @@ it('wakes readers on interruption and disconnect, and keeps interrupted threads 
   agents.close();
   expect(await resumed).toMatchObject({ status: 'failed', error: 'disconnected' });
 });
+
+it('interrupts on cancellation only for a wait that opts in', async () => {
+  const { agents, request } = setup();
+  const worker = await agents.spawn({ prompt: 'Work' });
+  const controller = new AbortController();
+  const wait = agents.wait(worker.agent_id, 0, 30_000, { signal: controller.signal });
+  controller.abort();
+  expect(await wait).toMatchObject({ status: 'running' });
+  expect(request).not.toHaveBeenCalledWith('turn/interrupt', expect.anything());
+
+  const relay = new AbortController();
+  const relayWait = agents.wait(worker.agent_id, 0, 30_000, { signal: relay.signal, interruptOnCancel: true });
+  relay.abort();
+  expect(await relayWait).toMatchObject({ status: 'stopping' });
+  expect(request).toHaveBeenCalledWith('turn/interrupt', { threadId: worker.agent_id, turnId: expect.any(String) });
+});

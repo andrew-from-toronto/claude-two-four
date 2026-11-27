@@ -21,7 +21,11 @@ Needs Node 22 or later on the machine.
 
 ## Codex Agents
 
-Install the [Codex CLI](https://developers.openai.com/codex/cli), make `codex` available on `PATH`, and sign in before delegating. For example, ask Claude to “Delegate a read-only review to Codex, ask it to focus on error handling, and report back with its findings.”
+Install the [Codex CLI](https://developers.openai.com/codex/cli), make `codex` available on `PATH`, and sign in before delegating.
+
+In Claude Code, type `@` and select `codex-agents:codex`, then give it a task. The background subagent appears in the terminal's subagent panel and in `/tasks`. Open its transcript or send it a follow-up through Claude's usual subagent controls. The Claude subagent relays messages and results while Codex does the assigned work. It reports the worker ID to the parent for direct mid-turn steering or interruption through the MCP tools.
+
+The parent can also call the MCP tools directly.
 
 | Tool | What it does |
 | --- | --- |

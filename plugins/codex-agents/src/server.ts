@@ -3,7 +3,7 @@ import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { CodexAgents } from './codex-agents.js';
 import { registerCodexTools } from './codex-tools.js';
 
-const version = '0.1.0';
+const version = '0.2.0';
 const baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 const codex = new CodexAgents(baseDir, version);
 

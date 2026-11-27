@@ -22465,10 +22465,12 @@ var CodexAgents = class {
   list() {
     return Array.from(this.agents.values(), describe2);
   }
-  async wait(id, cursor, timeoutMs, signal) {
+  async wait(id, cursor, timeoutMs, options = {}) {
     const agent = this.getAgent(id);
+    const current = agent.turn;
+    const { signal, interruptOnCancel } = options;
     if (cursor > agent.messages.length) throw new Error("cursor is ahead of this agent\u2019s messages");
-    if (cursor === agent.messages.length && active(agent.turn) && !agent.connectionError && timeoutMs > 0 && !signal?.aborted) {
+    if (cursor === agent.messages.length && active(current) && !agent.connectionError && timeoutMs > 0 && !signal?.aborted) {
       await new Promise((resolve) => {
         const finish = () => {
           clearTimeout(timer);
@@ -22481,6 +22483,7 @@ var CodexAgents = class {
         signal?.addEventListener("abort", finish, { once: true });
       });
     }
+    if (signal?.aborted && interruptOnCancel && current === agent.turn) await this.stop(id);
     const messages = agent.messages.slice(cursor, cursor + 20);
     const next_cursor = cursor + messages.length;
     return { ...describe2(agent), messages, next_cursor, has_more: next_cursor < agent.messages.length };
@@ -22581,10 +22584,11 @@ function registerCodexTools(server, agents) {
     inputSchema: object({
       agent_id: agentId,
       cursor: number2().int().nonnegative().optional().describe("Use 0 on the first read, then the previous next_cursor"),
-      timeout_seconds: number2().int().min(0).max(60).optional().describe("Default 25 seconds. Use 0 to check immediately.")
+      timeout_seconds: number2().int().min(0).max(60).optional().describe("Default 25 seconds. Use 0 to check immediately."),
+      interrupt_on_cancel: boolean2().optional().describe("Interrupt the current Codex turn if Claude Code cancels this wait. Defaults to false.")
     })
-  }, ({ agent_id, cursor = 0, timeout_seconds = 25 }, ctx) => response(
-    () => agents.wait(agent_id, cursor, timeout_seconds * 1e3, ctx.mcpReq.signal)
+  }, ({ agent_id, cursor = 0, timeout_seconds = 25, interrupt_on_cancel }, ctx) => response(
+    () => agents.wait(agent_id, cursor, timeout_seconds * 1e3, { signal: ctx.mcpReq.signal, interruptOnCancel: interrupt_on_cancel })
   ));
   server.registerTool("codex_list", {
     description: "List the Codex subagents started in this Claude session and their current turn status.",
@@ -22597,7 +22601,7 @@ function registerCodexTools(server, agents) {
 }
 
 // src/server.ts
-var version2 = "0.1.0";
+var version2 = "0.2.0";
 var baseDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var codex = new CodexAgents(baseDir, version2);
 var handle = serveStdio(() => {
