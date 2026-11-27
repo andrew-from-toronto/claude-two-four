@@ -1,5 +1,7 @@
 # claude-two-four
 
+[![two-four: Canadian term referring to a case of beer containing twenty-four bottles](docs/two-four.png)](https://www.urbandictionary.com/define.php?term=two-four)
+
 A Claude Code plugin with one MCP server for batch file edits, multi-pattern search, shell commands, GitHub Actions results and Claude plan usage.
 
 ## Install
